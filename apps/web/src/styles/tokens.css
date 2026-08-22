@@ -1,0 +1,119 @@
+/* ============================================================
+   SWISS EDITORIAL MOTION — DESIGN TOKENS
+   Swiss International Style / Industrial Editorial System
+
+   HOW TO REBRAND:
+   Only this file needs to change to re-skin the whole system for
+   a new brand. The five color roles below are deliberately named
+   by FUNCTION, not by hue — keep the variable names, swap the hex
+   values. The system depends on the *contrast relationships*
+   (dark neutral / light neutral / one deep structural hue / one
+   precision accent used sparingly), not on these exact colors.
+
+   --charcoal   → dominant dark neutral surface (headers, deep sections)
+   --cream      → dominant light neutral surface (editorial sections)
+   --teal       → secondary structural color — a deep, confident hue
+                  used for one or two "decision/commit" moments
+                  (sticky panels, the composer). Should read as
+                  serious, not decorative.
+   --gold       → precision accent. Used only for: active states,
+                  underlines, the one CTA color, small metadata
+                  highlights. If it shows up in more than ~10% of
+                  a viewport, you're overusing it.
+   --muted      → secondary ink for captions/metadata on both
+                  light and dark surfaces.
+   ============================================================ */
+
+:root {
+  /* ---- Color roles — replace hex values only ---- */
+  --teal: #0F5C63;
+  --teal-light: #1C7C84;
+
+  --charcoal: #232629;
+  --charcoal-2: #2B2F32;
+  --charcoal-3: #34393D;
+
+  --gold: #C29B4B;
+  --gold-soft: #D9BC80;
+
+  --cream: #F4F1EB;
+  --cream-2: #EAE4D5;
+
+  --muted: #A9AFAE;
+  --muted-2: #7C8385;
+
+  /* ---- Semantic surface / ink pairs (light section) ---- */
+  --surface-cream: var(--cream);
+  --ink-on-cream: var(--charcoal);
+  --ink-on-cream-soft: var(--muted-2);
+  --rule-on-cream: rgba(35, 38, 41, 0.14);
+
+  /* ---- Semantic surface / ink pairs (dark section) ---- */
+  --surface-charcoal: var(--charcoal);
+  --ink-on-charcoal: var(--cream);
+  --ink-on-charcoal-soft: var(--muted);
+  --rule-on-charcoal: rgba(244, 241, 235, 0.14);
+
+  /* ---- Semantic surface / ink pairs (structural-color section) ---- */
+  --surface-teal: var(--teal);
+  --ink-on-teal: var(--cream);
+  --ink-on-teal-soft: rgba(244, 241, 235, 0.66);
+  --rule-on-teal: rgba(244, 241, 235, 0.2);
+
+  /* ---- Typography ----
+     A strong grotesk for display type + a mono for metadata/eyebrows/
+     numbering is the core Swiss-editorial typographic move. Swap the
+     font-family stacks; keep the two-family structure. */
+  --font-display: "Helvetica Neue", Helvetica, Arial, "IBM Plex Sans", Inter, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --fs-hero: clamp(56px, 7vw, 118px);
+  --fs-display: clamp(40px, 5.2vw, 72px);
+  --fs-statement: clamp(48px, 9vw, 148px);
+  --fs-h2: clamp(30px, 3.4vw, 44px);
+  --fs-h3: clamp(20px, 2vw, 26px);
+  --fs-body-lg: clamp(17px, 1.4vw, 20px);
+  --fs-body: 16px;
+  --fs-meta: 12px;
+  --fs-meta-lg: 13px;
+
+  --lh-tight: 1.02;
+  --lh-snug: 1.15;
+  --lh-normal: 1.5;
+
+  --ls-mono: 0.06em;
+  --ls-wide: 0.14em;
+
+  /* ---- Grid / container ---- */
+  --page-max: 1600px;
+  --page-margin: clamp(20px, 4.4vw, 64px);
+  --grid-gap: clamp(16px, 1.6vw, 28px);
+
+  /* ---- Spacing scale ---- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+  --sp-10: 128px;
+  --sp-11: 176px;
+
+  /* ---- Borders / radius ---- */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --border-thin: 1px;
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 160ms;
+  --dur-base: 320ms;
+  --dur-slow: 640ms;
+
+  /* ---- Z-index ---- */
+  --z-header: 100;
+  --z-overlay: 200;
+}

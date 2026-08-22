@@ -1,0 +1,495 @@
+// ============================================================
+// RENAS PLATFORM — DATABASE SCHEMA
+//
+// Design notes (documented here because they're load-bearing decisions,
+// not incidental):
+//
+// 1. Draft/publish isolation for Page and BlogPost is modeled with THREE
+//    layers rather than a single "content" field:
+//      - PageSection rows (and BlogPost.content) = the live DRAFT, editable
+//        at any time by the CMS. Preview mode reads this directly.
+//      - Page.publishedSnapshot / BlogPost.publishedSnapshot = an immutable
+//        JSON snapshot written only when "Publish" is pressed. The PUBLIC
+//        API reads only this field — it never queries draft rows — which is
+//        what guarantees a published page can't change underneath visitors
+//        just because someone is mid-edit.
+//      - ContentRevision = one row per publish (or restore), keeping full
+//        history independent of the two fields above, so "restore" doesn't
+//        need to reconstruct anything — it just copies a past snapshot back
+//        into the draft rows.
+//
+// 2. Role is a fixed enum (SUPER_ADMIN, EDITOR) rather than a separate table.
+//    The spec's entity list calls for "Role," but a join-table-backed RBAC
+//    system is only justified once roles are dynamic/admin-configurable,
+//    which isn't a current requirement — an enum is the normalized choice
+//    for a small, fixed set of roles and avoids an unnecessary join on
+//    every authorization check.
+//
+// 3. SeoMetadata is its own table with optional 1:1 back-references from
+//    Page and BlogPost (rather than duplicating the same seven columns on
+//    both), since the shape is identical for both entities.
+//
+// 4. All primary keys are UUIDs; all timestamps are `@db.Timestamptz` so
+//    Postgres stores and compares them in UTC regardless of session
+//    timezone.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------
+// Auth / Users
+// ---------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN
+  EDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+model User {
+  id          String     @id @default(uuid()) @db.Uuid
+  email       String     @unique
+  name        String
+  role        Role
+  status      UserStatus @default(ACTIVE)
+  lastLoginAt DateTime?  @db.Timestamptz
+  createdAt   DateTime   @default(now()) @db.Timestamptz
+  updatedAt   DateTime   @updatedAt @db.Timestamptz
+
+  sessions        Session[]
+  otpCodes        OtpCode[]
+  auditLogs       AuditLog[]
+  uploadedMedia   MediaAsset[]
+  supplyNotes     SupplyRequestNote[]
+  editedRevisions ContentRevision[]
+
+  @@index([email])
+}
+
+model Session {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime  @db.Timestamptz
+  revokedAt DateTime? @db.Timestamptz
+  createdAt DateTime  @default(now()) @db.Timestamptz
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OtpCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @db.Uuid
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  attempts   Int       @default(0)
+  expiresAt  DateTime  @db.Timestamptz
+  consumedAt DateTime? @db.Timestamptz
+  ipAddress  String?
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  @@index([userId, consumedAt])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now()) @db.Timestamptz
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ---------------------------------------------------------------
+// Site-wide configuration
+// ---------------------------------------------------------------
+
+model SiteSettings {
+  id                    String      @id @default(uuid()) @db.Uuid
+  companyName           String
+  defaultSeoTitle       String?
+  defaultSeoDescription String?
+  logoMediaId           String?     @db.Uuid
+  logoMedia             MediaAsset? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  faviconMediaId        String?     @db.Uuid
+  faviconMedia          MediaAsset? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  contactEmail          String?
+  phone                 String?
+  whatsapp              String?
+  linkedin              String?
+  officeAddress         String?
+  footerText            String?
+  socialLinks           Json?
+  defaultOgImageId      String?     @db.Uuid
+  defaultOgImage        MediaAsset? @relation("SettingsOgImage", fields: [defaultOgImageId], references: [id], onDelete: SetNull)
+  updatedAt             DateTime    @updatedAt @db.Timestamptz
+}
+
+enum NavigationKey {
+  HEADER
+  FOOTER
+}
+
+model Navigation {
+  id        String           @id @default(uuid()) @db.Uuid
+  key       NavigationKey    @unique
+  items     NavigationItem[]
+  updatedAt DateTime         @updatedAt @db.Timestamptz
+}
+
+model NavigationItem {
+  id           String     @id @default(uuid()) @db.Uuid
+  navigationId String     @db.Uuid
+  navigation   Navigation @relation(fields: [navigationId], references: [id], onDelete: Cascade)
+  label        String
+  url          String
+  isExternal   Boolean    @default(false)
+  target       String     @default("_self")
+  position     Int
+  isVisible    Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @db.Timestamptz
+
+  @@index([navigationId, position])
+}
+
+// ---------------------------------------------------------------
+// SEO (shared shape for Page and BlogPost)
+// ---------------------------------------------------------------
+
+model SeoMetadata {
+  id             String      @id @default(uuid()) @db.Uuid
+  seoTitle       String?
+  seoDescription String?
+  canonicalUrl   String?
+  robotsIndex    Boolean     @default(true)
+  robotsFollow   Boolean     @default(true)
+  ogTitle        String?
+  ogDescription  String?
+  ogImageId      String?     @db.Uuid
+  ogImage        MediaAsset? @relation(fields: [ogImageId], references: [id], onDelete: SetNull)
+  createdAt      DateTime    @default(now()) @db.Timestamptz
+  updatedAt      DateTime    @updatedAt @db.Timestamptz
+
+  page     Page?
+  blogPost BlogPost?
+}
+
+// ---------------------------------------------------------------
+// Pages / Sections / Revisions
+// ---------------------------------------------------------------
+
+enum PageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Page {
+  id                String       @id @default(uuid()) @db.Uuid
+  title             String
+  slug              String
+  locale            String       @default("en")
+  status            PageStatus   @default(DRAFT)
+  seoMetadataId     String?      @unique @db.Uuid
+  seoMetadata       SeoMetadata? @relation(fields: [seoMetadataId], references: [id], onDelete: SetNull)
+  publishedSnapshot Json?
+  publishedAt       DateTime?    @db.Timestamptz
+  createdAt         DateTime     @default(now()) @db.Timestamptz
+  updatedAt         DateTime     @updatedAt @db.Timestamptz
+
+  sections PageSection[]
+
+  @@unique([slug, locale])
+  @@index([status])
+}
+
+enum PageSectionType {
+  hero
+  rich_text
+  process
+  supply_categories
+  supply_system
+  component_index
+  decision_layer
+  route_stories
+  operational_signals
+  capability
+  principles
+  cta
+  image
+  image_text
+  faq
+}
+
+model PageSection {
+  id        String          @id @default(uuid()) @db.Uuid
+  pageId    String          @db.Uuid
+  page      Page            @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type      PageSectionType
+  position  Int
+  content   Json
+  isVisible Boolean         @default(true)
+  createdAt DateTime        @default(now()) @db.Timestamptz
+  updatedAt DateTime        @updatedAt @db.Timestamptz
+
+  @@index([pageId, position])
+}
+
+enum RevisionEntityType {
+  PAGE
+  BLOG_POST
+}
+
+model ContentRevision {
+  id         String             @id @default(uuid()) @db.Uuid
+  entityType RevisionEntityType
+  entityId   String             @db.Uuid
+  version    Int
+  snapshot   Json
+  editorId   String?            @db.Uuid
+  editor     User?              @relation(fields: [editorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime           @default(now()) @db.Timestamptz
+
+  @@unique([entityType, entityId, version])
+  @@index([entityType, entityId])
+}
+
+// ---------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Author {
+  id            String      @id @default(uuid()) @db.Uuid
+  name          String
+  bio           String?
+  email         String?
+  avatarMediaId String?     @db.Uuid
+  avatarMedia   MediaAsset? @relation(fields: [avatarMediaId], references: [id], onDelete: SetNull)
+  createdAt     DateTime    @default(now()) @db.Timestamptz
+  updatedAt     DateTime    @updatedAt @db.Timestamptz
+
+  posts BlogPost[]
+}
+
+model BlogCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  posts BlogPostCategory[]
+}
+
+model BlogTag {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  posts BlogPostTag[]
+}
+
+model BlogPost {
+  id                String         @id @default(uuid()) @db.Uuid
+  title             String
+  slug              String         @unique
+  excerpt           String?
+  content           Json
+  coverImageId      String?        @db.Uuid
+  coverImage        MediaAsset?    @relation(fields: [coverImageId], references: [id], onDelete: SetNull)
+  authorId          String?        @db.Uuid
+  author            Author?        @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  status            BlogPostStatus @default(DRAFT)
+  scheduledAt       DateTime?      @db.Timestamptz
+  publishedAt       DateTime?      @db.Timestamptz
+  publishedSnapshot Json?
+  seoMetadataId     String?        @unique @db.Uuid
+  seoMetadata       SeoMetadata?   @relation(fields: [seoMetadataId], references: [id], onDelete: SetNull)
+  createdAt         DateTime       @default(now()) @db.Timestamptz
+  updatedAt         DateTime       @updatedAt @db.Timestamptz
+
+  categories BlogPostCategory[]
+  tags       BlogPostTag[]
+
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model BlogPostCategory {
+  blogPostId String       @db.Uuid
+  blogPost   BlogPost     @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  categoryId String       @db.Uuid
+  category   BlogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([blogPostId, categoryId])
+}
+
+model BlogPostTag {
+  blogPostId String   @db.Uuid
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  tagId      String   @db.Uuid
+  tag        BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([blogPostId, tagId])
+}
+
+// ---------------------------------------------------------------
+// Media
+// ---------------------------------------------------------------
+
+model MediaAsset {
+  id               String   @id @default(uuid()) @db.Uuid
+  filename         String
+  originalFilename String
+  mimeType         String
+  size             Int
+  width            Int?
+  height           Int?
+  storageKey       String   @unique
+  publicUrl        String
+  alt              String?
+  caption          String?
+  uploadedById     String?  @db.Uuid
+  uploadedBy       User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now()) @db.Timestamptz
+
+  seoUses           SeoMetadata[]
+  blogCovers        BlogPost[]
+  authorAvatars     Author[]
+  settingsLogoOf    SiteSettings[]  @relation("SettingsLogo")
+  settingsFaviconOf SiteSettings[]  @relation("SettingsFavicon")
+  settingsOgImageOf SiteSettings[]  @relation("SettingsOgImage")
+  supplyAttachments SupplyRequest[]
+
+  @@index([mimeType])
+}
+
+// ---------------------------------------------------------------
+// Redirects
+// ---------------------------------------------------------------
+
+model Redirect {
+  id              String   @id @default(uuid()) @db.Uuid
+  sourcePath      String   @unique
+  destinationPath String
+  statusCode      Int      @default(301)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz
+  updatedAt       DateTime @updatedAt @db.Timestamptz
+}
+
+// ---------------------------------------------------------------
+// Supply requests (RFQ) / Contact
+// ---------------------------------------------------------------
+
+enum SupplyRequestStatus {
+  NEW
+  REVIEWING
+  CONTACTED
+  QUALIFIED
+  CLOSED
+  SPAM
+}
+
+model SupplyRequest {
+  id                String              @id @default(uuid()) @db.Uuid
+  productName       String
+  brand             String?
+  partNumber        String?
+  quantity          String?
+  unit              String?
+  category          String?
+  originPreference  String?
+  destination       String?
+  requiredBy        DateTime?           @db.Timestamptz
+  attachmentMediaId String?             @db.Uuid
+  attachment        MediaAsset?         @relation(fields: [attachmentMediaId], references: [id], onDelete: SetNull)
+  contactName       String
+  companyName       String?
+  contactEmail      String?
+  contactPhone      String?
+  contactChannel    String?
+  message           String?
+  source            String?
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  utmContent        String?
+  utmTerm           String?
+  referrer          String?
+  status            SupplyRequestStatus @default(NEW)
+  createdAt         DateTime            @default(now()) @db.Timestamptz
+  updatedAt         DateTime            @updatedAt @db.Timestamptz
+
+  notes SupplyRequestNote[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SupplyRequestNote {
+  id              String        @id @default(uuid()) @db.Uuid
+  supplyRequestId String        @db.Uuid
+  supplyRequest   SupplyRequest @relation(fields: [supplyRequestId], references: [id], onDelete: Cascade)
+  authorId        String?       @db.Uuid
+  author          User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  note            String
+  createdAt       DateTime      @default(now()) @db.Timestamptz
+
+  @@index([supplyRequestId])
+}
+
+enum ContactSubmissionStatus {
+  NEW
+  HANDLED
+  SPAM
+}
+
+model ContactSubmission {
+  id        String                  @id @default(uuid()) @db.Uuid
+  name      String
+  company   String?
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  status    ContactSubmissionStatus @default(NEW)
+  createdAt DateTime                @default(now()) @db.Timestamptz
+  updatedAt DateTime                @updatedAt @db.Timestamptz
+
+  @@index([status])
+  @@index([createdAt])
+}

@@ -1,0 +1,108 @@
+@import "./tokens.css";
+@import "./base.css";
+@import "./motion.css";
+
+/* ---------------------------------------------------------------
+   Article body typography — used by both RichTextSection (sanitized
+   CMS HTML) and TipTapRenderer (blog post content). Additive prose
+   styling on top of the design system's base typography, not a
+   redesign of it.
+   --------------------------------------------------------------- */
+.m-article-body {
+  font-size: var(--fs-body-lg);
+  line-height: var(--lh-normal);
+  color: var(--ink-on-cream);
+  max-width: 68ch;
+}
+.m-article-body h2 { font-size: var(--fs-h2); margin: var(--sp-7) 0 var(--sp-4); }
+.m-article-body h3 { font-size: var(--fs-h3); margin: var(--sp-6) 0 var(--sp-3); }
+.m-article-body h4 { font-size: 18px; margin: var(--sp-5) 0 var(--sp-2); }
+.m-article-body p { margin: 0 0 var(--sp-5); }
+.m-article-body ul, .m-article-body ol { margin: 0 0 var(--sp-5); padding-left: 1.4em; }
+.m-article-body li { margin-bottom: var(--sp-2); }
+.m-article-body blockquote {
+  border-left: 3px solid var(--gold);
+  padding-left: var(--sp-5);
+  margin: var(--sp-6) 0;
+  color: var(--ink-on-cream-soft);
+  font-style: italic;
+}
+.m-article-body img { max-width: 100%; height: auto; margin: var(--sp-6) 0; }
+.m-article-body pre {
+  background: var(--charcoal);
+  color: var(--cream);
+  padding: var(--sp-4);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-radius: var(--radius-sm);
+}
+.m-article-body code { font-family: var(--font-mono); font-size: 0.9em; }
+.m-article-body hr { border: none; border-top: var(--border-thin) solid var(--rule-on-cream); margin: var(--sp-7) 0; }
+.m-article-body table { border-collapse: collapse; width: 100%; margin: var(--sp-6) 0; }
+.m-article-body th, .m-article-body td { border: var(--border-thin) solid var(--rule-on-cream); padding: var(--sp-3); text-align: left; }
+.m-callout {
+  background: var(--cream-2);
+  border-left: 3px solid var(--teal);
+  padding: var(--sp-4) var(--sp-5);
+  margin: var(--sp-6) 0;
+}
+
+/* ---------------------------------------------------------------
+   Preview mode banner (web-app specific, not part of the portable
+   design system skill — this only ever renders when Next.js Draft
+   Mode is enabled).
+   --------------------------------------------------------------- */
+.m-preview-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: var(--gold);
+  color: var(--charcoal);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-5);
+  padding: 10px var(--page-margin);
+}
+.m-preview-banner a {
+  text-decoration: underline;
+  font-weight: 700;
+}
+body:has(.m-preview-banner) .m-header {
+  top: 38px;
+}
+
+/* ---------------------------------------------------------------
+   Form states (Request Supply / Contact) — additive to the design
+   system's existing .m-composer classes, not a redesign of them.
+   --------------------------------------------------------------- */
+.m-field-error {
+  color: var(--gold-soft);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: var(--ls-mono);
+  margin-top: var(--sp-2);
+}
+.m-form-banner {
+  font-family: var(--font-mono);
+  font-size: var(--fs-meta-lg);
+  letter-spacing: var(--ls-wide);
+  padding: var(--sp-4) var(--sp-5);
+  border: var(--border-thin) solid currentColor;
+  margin-bottom: var(--sp-6);
+}
+.m-form-banner--success { color: var(--teal); }
+.m-form-banner--error { color: #b5544a; }
+.m-composer__input:disabled,
+.m-choice:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,42 @@
+{
+  "name": "renas-platform",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.30.1",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "clean": "turbo run clean",
+    "db:migrate": "pnpm --filter @renas/database exec prisma migrate dev",
+    "db:migrate:deploy": "pnpm --filter @renas/database exec prisma migrate deploy",
+    "db:seed": "pnpm --filter @renas/database exec prisma db seed",
+    "db:studio": "pnpm --filter @renas/database exec prisma studio",
+    "db:generate": "pnpm --filter @renas/database exec prisma generate",
+    "db:backup": "bash infra/scripts/db-backup.sh",
+    "db:restore": "bash infra/scripts/db-restore.sh"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "prettier": "^3.4.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma",
+      "@nestjs/core",
+      "argon2",
+      "sharp",
+      "@scarf/scarf"
+    ]
+  }
+}
