@@ -1,6 +1,7 @@
 import { draftMode } from "next/headers";
 import { config } from "./config";
 import type { AnyPageSection } from "@renas/shared";
+import { DEFAULT_LOCALE, type Locale } from "./i18n";
 
 export interface PublicPage {
   id: string;
@@ -38,15 +39,26 @@ export interface PublicNavigation {
 
 export interface PublicSettings {
   companyName: string;
+  companyNameFa: string | null;
   defaultSeoTitle: string | null;
+  defaultSeoTitleFa: string | null;
   defaultSeoDescription: string | null;
+  defaultSeoDescriptionFa: string | null;
   contactEmail: string | null;
   phone: string | null;
   whatsapp: string | null;
   linkedin: string | null;
   officeAddress: string | null;
+  officeAddressFa: string | null;
   footerText: string | null;
+  footerTextFa: string | null;
   socialLinks: Record<string, string> | null;
+}
+
+export interface PublicMediaRef {
+  id: string;
+  url: string;
+  alt: string | null;
 }
 
 export interface PublicBlogPost {
@@ -56,11 +68,19 @@ export interface PublicBlogPost {
   excerpt: string | null;
   content: unknown;
   coverImageId: string | null;
+  coverImage: PublicMediaRef | null;
+  galleryImages: PublicMediaRef[];
   authorId: string | null;
   categoryIds: string[];
   tagIds: string[];
   seo: PublicSeo | null;
   publishedAt: string | null;
+}
+
+export interface PublicFaqItem {
+  id: string;
+  question: string;
+  answer: string;
 }
 
 class NotFoundError extends Error {}
@@ -99,35 +119,36 @@ async function internalFetch<T>(path: string): Promise<T | null> {
  * actively previewing), and the published, tag-cached snapshot otherwise —
  * callers never need to know which mode they're in.
  */
-export async function getPage(slug: string): Promise<PublicPage> {
+export async function getPage(slug: string, locale: Locale = DEFAULT_LOCALE): Promise<PublicPage> {
   const { isEnabled } = await draftMode();
   if (isEnabled) {
-    const draft = await internalFetch<PublicPage>(`/pages/${slug}/draft`);
+    const draft = await internalFetch<PublicPage>(`/pages/${slug}/draft?locale=${locale}`);
     if (!draft) throw new NotFoundError(slug);
     return draft;
   }
-  return apiFetch<PublicPage>(`/public/pages/${slug}`, { tags: [`page:${slug}`] });
+  return apiFetch<PublicPage>(`/public/pages/${slug}?locale=${locale}`, { tags: [`page:${slug}:${locale}`] });
 }
 
-export async function getNavigation(key: "HEADER" | "FOOTER"): Promise<PublicNavigation> {
-  return apiFetch(`/public/navigation/${key}`, { tags: ["navigation"] });
+export async function getNavigation(key: "HEADER" | "FOOTER", locale: Locale = DEFAULT_LOCALE): Promise<PublicNavigation> {
+  return apiFetch(`/public/navigation/${key}?locale=${locale}`, { tags: ["navigation"] });
 }
 
 export async function getSettings(): Promise<PublicSettings> {
   return apiFetch(`/public/settings`, { tags: ["site-settings"] });
 }
 
-export async function getBlogPost(slug: string): Promise<PublicBlogPost> {
+export async function getBlogPost(slug: string, locale: Locale = DEFAULT_LOCALE): Promise<PublicBlogPost> {
   const { isEnabled } = await draftMode();
   if (isEnabled) {
-    const draft = await internalFetch<PublicBlogPost>(`/blog/${slug}/draft`);
+    const draft = await internalFetch<PublicBlogPost>(`/blog/${slug}/draft?locale=${locale}`);
     if (!draft) throw new NotFoundError(slug);
     return draft;
   }
-  return apiFetch<PublicBlogPost>(`/public/blog/${slug}`, { tags: [`blog:post:${slug}`] });
+  return apiFetch<PublicBlogPost>(`/public/blog/${slug}?locale=${locale}`, { tags: [`blog:post:${slug}:${locale}`] });
 }
 
 export async function listBlogPosts(params: {
+  locale?: Locale;
   page?: number;
   perPage?: number;
   category?: string;
@@ -135,12 +156,17 @@ export async function listBlogPosts(params: {
   search?: string;
 }): Promise<{ items: PublicBlogPost[]; total: number }> {
   const query = new URLSearchParams();
+  query.set("locale", params.locale ?? DEFAULT_LOCALE);
   if (params.page) query.set("page", String(params.page));
   if (params.perPage) query.set("perPage", String(params.perPage));
   if (params.category) query.set("category", params.category);
   if (params.tag) query.set("tag", params.tag);
   if (params.search) query.set("search", params.search);
   return apiFetch(`/public/blog?${query.toString()}`, { tags: ["blog:list"] });
+}
+
+export async function listFaqItems(locale: Locale = DEFAULT_LOCALE): Promise<PublicFaqItem[]> {
+  return apiFetch(`/public/faq?locale=${locale}`, { tags: ["faq:list"] });
 }
 
 export async function resolveRedirect(path: string): Promise<{ destinationPath: string; statusCode: number } | null> {
@@ -153,7 +179,7 @@ export async function resolveRedirect(path: string): Promise<{ destinationPath: 
 
 export async function getSitemapEntries(): Promise<{
   pages: Array<{ slug: string; locale: string; updatedAt: string }>;
-  posts: Array<{ slug: string; updatedAt: string }>;
+  posts: Array<{ slug: string; locale: string; updatedAt: string }>;
 }> {
   return apiFetch(`/public/sitemap`, { cache: "no-store" });
 }

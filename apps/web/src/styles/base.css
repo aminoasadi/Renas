@@ -6,6 +6,11 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  /* Safety net against a stray element forcing horizontal scroll on
+     mobile — clips at the viewport edge without touching body's own
+     scroll container, which the GSAP ScrollTrigger/`position: sticky`
+     sections throughout the homepage rely on. */
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -26,7 +31,8 @@ body {
   font-size: var(--fs-body);
   line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
-  direction: ltr;
+  /* Direction comes from <html dir>, set per-locale by the layout —
+     do not hard-code it here or it overrides RTL for every descendant. */
 }
 
 img { max-width: 100%; display: block; }
@@ -44,7 +50,12 @@ h1, h2, h3, h4, p { margin: 0; }
   width: 1px; height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
-  white-space: nowrap;
+  /* No `white-space: nowrap` here (unlike the usual visually-hidden
+     recipe) — this class also wraps sentence-length content (the
+     supply-system node descriptions), and an unwrapped run of that text
+     expands the document's scrollable width on mobile even though the
+     1px/overflow:hidden box clips it from view. Wrapping keeps the
+     overflow vertical (harmless) instead of horizontal. */
 }
 
 :focus-visible {

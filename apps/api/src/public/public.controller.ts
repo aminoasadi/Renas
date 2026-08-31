@@ -4,6 +4,7 @@ import { PagesService } from "../pages/pages.service";
 import { NavigationService } from "../navigation/navigation.service";
 import { SettingsService } from "../settings/settings.service";
 import { BlogService } from "../blog/blog.service";
+import { FaqService } from "../faq/faq.service";
 import { InternalSecretGuard } from "../common/guards/internal-secret.guard";
 
 /**
@@ -20,6 +21,7 @@ export class PublicController {
     private readonly navigation: NavigationService,
     private readonly settings: SettingsService,
     private readonly blog: BlogService,
+    private readonly faq: FaqService,
   ) {}
 
   @Get("pages/:slug")
@@ -28,8 +30,8 @@ export class PublicController {
   }
 
   @Get("navigation/:key")
-  async getNavigation(@Param("key") key: "HEADER" | "FOOTER") {
-    const nav = await this.navigation.get(key);
+  async getNavigation(@Param("key") key: "HEADER" | "FOOTER", @Query("locale") locale = "en") {
+    const nav = await this.navigation.getForLocale(key, locale);
     return { ...nav, items: nav.items.filter((item) => item.isVisible) };
   }
 
@@ -41,12 +43,17 @@ export class PublicController {
   @Get("blog")
   listBlog(@Query() query: Record<string, string>) {
     const { page, perPage } = paginationSchema.parse(query);
-    return this.blog.listPublished({ page, perPage, category: query.category, tag: query.tag, search: query.search });
+    return this.blog.listPublished({ page, perPage, locale: query.locale, category: query.category, tag: query.tag, search: query.search });
   }
 
   @Get("blog/:slug")
-  getBlogPost(@Param("slug") slug: string) {
-    return this.blog.getPublishedBySlug(slug);
+  getBlogPost(@Param("slug") slug: string, @Query("locale") locale?: string) {
+    return this.blog.getPublishedBySlug(slug, locale);
+  }
+
+  @Get("faq")
+  listFaq(@Query("locale") locale = "en") {
+    return this.faq.listVisible(locale);
   }
 
   @Get("sitemap")
@@ -71,7 +78,7 @@ export class InternalController {
   }
 
   @Get("blog/:slug/draft")
-  getDraftBlogPost(@Param("slug") slug: string) {
-    return this.blog.getDraftBySlug(slug);
+  getDraftBlogPost(@Param("slug") slug: string, @Query("locale") locale?: string) {
+    return this.blog.getDraftBySlug(slug, locale);
   }
 }

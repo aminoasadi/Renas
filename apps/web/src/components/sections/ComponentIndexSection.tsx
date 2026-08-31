@@ -3,7 +3,7 @@ import type { ComponentIndexContent } from "@renas/shared";
 export function ComponentIndexSection({ content }: { content: unknown }) {
   const c = content as ComponentIndexContent;
   return (
-    <section className="m-index section--cream" data-theme-bg="cream">
+    <section className="m-index section--cream" id="capabilities" aria-label="Component index" data-theme-bg="cream">
       <div className="container">
         {c.eyebrow && <p className="eyebrow">{c.eyebrow}</p>}
         <h2 className="m-index__title headline">{c.headline}</h2>

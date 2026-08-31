@@ -27,5 +27,6 @@ export const AuditAction = {
   CREATE_REDIRECT: "CREATE_REDIRECT",
   UPDATE_REDIRECT: "UPDATE_REDIRECT",
   DELETE_REDIRECT: "DELETE_REDIRECT",
+  UPDATE_FAQ_ITEMS: "UPDATE_FAQ_ITEMS",
 } as const;
 export type AuditAction = (typeof AuditAction)[keyof typeof AuditAction];

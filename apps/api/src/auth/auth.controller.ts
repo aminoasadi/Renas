@@ -11,7 +11,8 @@ import {
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
-import { requestOtpSchema, verifyOtpSchema } from "@renas/validation";
+import * as argon2 from "argon2";
+import { requestOtpSchema, verifyOtpSchema, passwordLoginSchema } from "@renas/validation";
 import { AuditAction } from "@renas/shared";
 import { OtpService } from "./otp.service";
 import { SessionService } from "./session.service";
@@ -56,27 +57,33 @@ export class AuthController {
       throw new UnauthorizedException(messages[result.outcome]);
     }
 
-    const { token, expiresAt } = await this.sessions.createSession(result.userId, {
-      userAgent: req.headers["user-agent"],
-      ipAddress: req.ip,
-    });
-    this.sessions.setSessionCookie(res, token, expiresAt);
+    return this.establishSession(result.userId, req, res);
+  }
 
-    await this.prisma.user.update({
-      where: { id: result.userId },
-      data: { lastLoginAt: new Date() },
-    });
-    await this.audit.record({
-      userId: result.userId,
-      action: AuditAction.LOGIN,
-      entityType: "User",
-      entityId: result.userId,
-      ipAddress: req.ip,
-      userAgent: req.headers["user-agent"],
-    });
+  /**
+   * Password login for accounts that opt into it via `username`/`passwordHash`
+   * (set outside the normal OTP flow — see the seed script). Kept separate
+   * from OTP rather than replacing it, since OTP remains the default for
+   * every other account. Heavily throttled: unlike a one-time code, a
+   * password is a fixed, guessable secret.
+   */
+  @Post("login")
+  @HttpCode(200)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async login(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const input = passwordLoginSchema.parse(body);
+    const user = await this.prisma.user.findUnique({ where: { username: input.username } });
 
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: result.userId } });
-    return { user: toPublicUser(user) };
+    if (!user || !user.passwordHash || user.status !== "ACTIVE") {
+      // Same generic error whether the username doesn't exist or the
+      // password is wrong — never reveal which one it was.
+      throw new UnauthorizedException("Invalid username or password");
+    }
+
+    const valid = await argon2.verify(user.passwordHash, input.password);
+    if (!valid) throw new UnauthorizedException("Invalid username or password");
+
+    return this.establishSession(user.id, req, res);
   }
 
   @Post("logout")
@@ -95,6 +102,30 @@ export class AuthController {
   @Get("me")
   @UseGuards(SessionAuthGuard)
   async me(@CurrentUser() user: User) {
+    return { user: toPublicUser(user) };
+  }
+
+  private async establishSession(userId: string, req: Request, res: Response) {
+    const { token, expiresAt } = await this.sessions.createSession(userId, {
+      userAgent: req.headers["user-agent"],
+      ipAddress: req.ip,
+    });
+    this.sessions.setSessionCookie(res, token, expiresAt);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { lastLoginAt: new Date() },
+    });
+    await this.audit.record({
+      userId,
+      action: AuditAction.LOGIN,
+      entityType: "User",
+      entityId: userId,
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     return { user: toPublicUser(user) };
   }
 }

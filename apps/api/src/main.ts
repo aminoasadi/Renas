@@ -1,5 +1,6 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
 import { Logger } from "nestjs-pino";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
@@ -10,7 +11,7 @@ import { ResponseInterceptor } from "./common/interceptors/response.interceptor"
 import type { AppConfig } from "./config/config.service";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
 
   const config = app.get<AppConfig>("APP_CONFIG");
@@ -51,7 +52,6 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT ?? 3002);
   await app.listen(port);
-  // eslint-disable-next-line no-console
   console.log(`RENAS API listening on port ${port}`);
 }
 

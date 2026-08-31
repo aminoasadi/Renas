@@ -5,6 +5,7 @@ import { seoMetadataInputSchema } from "./pages";
 export const createBlogPostSchema = z.object({
   title: z.string().min(1).max(300),
   slug: slugSchema,
+  locale: z.string().min(2).max(10).default("en"),
 });
 export type CreateBlogPostInput = z.infer<typeof createBlogPostSchema>;
 
@@ -18,6 +19,8 @@ export const updateBlogPostSchema = z.object({
   authorId: z.string().uuid().nullable().optional(),
   categoryIds: z.array(z.string().uuid()).optional(),
   tagIds: z.array(z.string().uuid()).optional(),
+  /** Up to 3 extra images shown on the post, in addition to the cover image. */
+  galleryImageIds: z.array(z.string().uuid()).max(3).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
   seo: seoMetadataInputSchema.optional(),
 });

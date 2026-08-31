@@ -2,49 +2,37 @@ import type { SupplySystemContent } from "@renas/shared";
 
 export function SupplySystemSection({ content }: { content: unknown }) {
   const c = content as SupplySystemContent;
-  const relations: Record<string, { connects: string[] }> = {};
-  c.nodes.forEach((n) => {
-    relations[n.key] = { connects: n.connects };
-  });
+  const words = c.nodes.map((n) => n.label);
 
   return (
-    <section className="m-system section--charcoal" data-theme-bg="charcoal">
-      <div className="container">
+    <section
+      className="m-system section--charcoal"
+      id="system"
+      aria-label="What RENAS handles"
+      data-theme-bg="charcoal"
+    >
+      <div className="m-system__sticky">
         {c.eyebrow && <p className="eyebrow">{c.eyebrow}</p>}
-        <h2 className="m-system__title headline">{c.headline}</h2>
-      </div>
-      <div className="m-system__stage" id="systemStage" data-relations={JSON.stringify(relations)}>
-        <svg className="m-system__lines" id="systemLines" viewBox="0 0 1200 640" preserveAspectRatio="xMidYMid meet" aria-hidden="true" />
+        <h2 className="m-system__fixed headline">{c.headline}</h2>
 
-        {c.nodes.map((node) => (
-          <button
-            key={node.key}
-            className="m-node"
-            data-node={node.key}
-            style={{ ["--x" as string]: `${node.x}%`, ["--y" as string]: `${node.y}%` }}
-          >
-            {node.label}
-          </button>
-        ))}
-
-        <div className="m-node m-node--center" id="systemCenter">
-          <span className="m-node__wordmark">{c.centerLabel}</span>
-          {c.centerSubLabel && <span className="m-node__label">{c.centerSubLabel}</span>}
+        {/* The reel is decorative — the real, always-legible copy is the
+            sr-only sentence below, so screen readers get the full list
+            rather than whatever word happens to be centered. */}
+        <div className="m-system__reel-viewport" aria-hidden="true">
+          <div className="m-system__reel" id="systemReel">
+            {words.map((w, i) => (
+              <div key={c.nodes[i].key} className="m-system__reel-item">
+                {w}.
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Hidden descriptions the motion layer reads via data-node-desc, keeping copy in the DOM (accessible, CMS-driven) instead of a hardcoded JS map. */}
-        <div className="sr-only">
-          {c.nodes.map((node) => (
-            <span key={node.key} data-node-desc={node.key}>
-              {node.description}
-            </span>
-          ))}
-        </div>
-
-        <p className="m-system__copy" id="systemCopy" data-default="Hover a node to see the relationships RENAS evaluates around it.">
-          Hover a node to see the relationships RENAS evaluates around it.
-        </p>
+        {c.centerSubLabel && <p className="m-system__caption meta">{c.centerSubLabel}</p>}
       </div>
+      <p className="sr-only">
+        {c.headline} {words.join(", ")}.
+      </p>
     </section>
   );
 }

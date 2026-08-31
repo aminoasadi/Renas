@@ -5,12 +5,20 @@ import { PrismaService } from "../prisma/prisma.service";
 import { RevisionsService } from "../content/revisions.service";
 import { RevalidationService } from "../content/revalidation.service";
 
+interface SnapshotImage {
+  id: string;
+  url: string;
+  alt: string | null;
+}
+
 interface BlogPostSnapshot {
   title: string;
   slug: string;
   excerpt: string | null;
   content: unknown;
   coverImageId: string | null;
+  coverImage: SnapshotImage | null;
+  galleryImages: SnapshotImage[];
   authorId: string | null;
   categoryIds: string[];
   tagIds: string[];
@@ -22,6 +30,7 @@ const postInclude = {
   tags: { include: { tag: true } },
   author: true,
   coverImage: true,
+  galleryImages: { include: { media: true }, orderBy: { position: "asc" } },
   seoMetadata: true,
 } as const;
 
@@ -53,29 +62,30 @@ export class BlogService {
   listPublishedSlugs() {
     return this.prisma.blogPost.findMany({
       where: { status: "PUBLISHED" },
-      select: { slug: true, updatedAt: true },
+      select: { slug: true, locale: true, updatedAt: true },
     });
   }
 
   /** Draft lookup by slug — used only by the internal preview endpoint. */
-  async getDraftBySlug(slug: string) {
-    const post = await this.prisma.blogPost.findUnique({ where: { slug }, include: postInclude });
+  async getDraftBySlug(slug: string, locale = "en") {
+    const post = await this.prisma.blogPost.findUnique({ where: { slug_locale: { slug, locale } }, include: postInclude });
     if (!post) throw new NotFoundException("Blog post not found");
     return post;
   }
 
   /** Public: reads the published snapshot with real-time comparisons only against `status`/`publishedAt`. */
-  async getPublishedBySlug(slug: string) {
-    const post = await this.prisma.blogPost.findUnique({ where: { slug } });
+  async getPublishedBySlug(slug: string, locale = "en") {
+    const post = await this.prisma.blogPost.findUnique({ where: { slug_locale: { slug, locale } } });
     if (!post || post.status !== "PUBLISHED" || !post.publishedSnapshot) {
       throw new NotFoundException("Blog post not found");
     }
     return { id: post.id, slug: post.slug, publishedAt: post.publishedAt, ...(post.publishedSnapshot as object) };
   }
 
-  async listPublished(params: { page: number; perPage: number; category?: string; tag?: string; search?: string }) {
+  async listPublished(params: { page: number; perPage: number; locale?: string; category?: string; tag?: string; search?: string }) {
     const where = {
       status: "PUBLISHED" as const,
+      locale: params.locale ?? "en",
       ...(params.category ? { categories: { some: { category: { slug: params.category } } } } : {}),
       ...(params.tag ? { tags: { some: { tag: { slug: params.tag } } } } : {}),
       ...(params.search
@@ -98,11 +108,11 @@ export class BlogService {
   }
 
   async create(input: CreateBlogPostInput) {
-    const existing = await this.prisma.blogPost.findUnique({ where: { slug: input.slug } });
-    if (existing) throw new ConflictException("A blog post with this slug already exists");
+    const existing = await this.prisma.blogPost.findUnique({ where: { slug_locale: { slug: input.slug, locale: input.locale } } });
+    if (existing) throw new ConflictException("A blog post with this slug already exists in this locale");
 
     return this.prisma.blogPost.create({
-      data: { title: input.title, slug: input.slug, content: {} },
+      data: { title: input.title, slug: input.slug, locale: input.locale, content: {} },
       include: postInclude,
     });
   }
@@ -112,8 +122,8 @@ export class BlogService {
     if (!post) throw new NotFoundException("Blog post not found");
 
     if (input.slug && input.slug !== post.slug) {
-      const clash = await this.prisma.blogPost.findUnique({ where: { slug: input.slug } });
-      if (clash) throw new ConflictException("A blog post with this slug already exists");
+      const clash = await this.prisma.blogPost.findUnique({ where: { slug_locale: { slug: input.slug, locale: post.locale } } });
+      if (clash) throw new ConflictException("A blog post with this slug already exists in this locale");
       if (post.status === "PUBLISHED") {
         await this.prisma.redirect.upsert({
           where: { sourcePath: `/blog/${post.slug}` },
@@ -156,6 +166,14 @@ export class BlogService {
         }) as never,
       );
     }
+    if (input.galleryImageIds) {
+      statements.push(
+        this.prisma.blogPostImage.deleteMany({ where: { blogPostId: id } }) as never,
+        this.prisma.blogPostImage.createMany({
+          data: input.galleryImageIds.map((mediaId, position) => ({ blogPostId: id, mediaId, position })),
+        }) as never,
+      );
+    }
     if (input.seo) {
       statements.push(
         this.prisma.blogPost.update({
@@ -180,19 +198,21 @@ export class BlogService {
     const post = await this.getForEditing(id);
     let slug = `${post.slug}-copy`;
     let suffix = 2;
-    while (await this.prisma.blogPost.findUnique({ where: { slug } })) {
+    while (await this.prisma.blogPost.findUnique({ where: { slug_locale: { slug, locale: post.locale } } })) {
       slug = `${post.slug}-copy-${suffix++}`;
     }
     return this.prisma.blogPost.create({
       data: {
         title: `${post.title} (Copy)`,
         slug,
+        locale: post.locale,
         excerpt: post.excerpt,
         content: post.content as never,
         coverImageId: post.coverImageId,
         authorId: post.authorId,
         categories: { create: post.categories.map((c) => ({ categoryId: c.categoryId })) },
         tags: { create: post.tags.map((t) => ({ tagId: t.tagId })) },
+        galleryImages: { create: post.galleryImages.map((g) => ({ mediaId: g.mediaId, position: g.position })) },
       },
       include: postInclude,
     });
@@ -206,6 +226,8 @@ export class BlogService {
       excerpt: post.excerpt,
       content: post.content,
       coverImageId: post.coverImageId,
+      coverImage: post.coverImage ? { id: post.coverImage.id, url: post.coverImage.publicUrl, alt: post.coverImage.alt } : null,
+      galleryImages: post.galleryImages.map((g) => ({ id: g.media.id, url: g.media.publicUrl, alt: g.media.alt })),
       authorId: post.authorId,
       categoryIds: post.categories.map((c) => c.categoryId),
       tagIds: post.tags.map((t) => t.tagId),
@@ -280,6 +302,10 @@ export class BlogService {
         authorId: snapshot.authorId,
         categories: { deleteMany: {}, create: snapshot.categoryIds.map((categoryId) => ({ categoryId })) },
         tags: { deleteMany: {}, create: snapshot.tagIds.map((tagId) => ({ tagId })) },
+        galleryImages: {
+          deleteMany: {},
+          create: snapshot.galleryImages.map((img, position) => ({ mediaId: img.id, position })),
+        },
       },
     });
     return this.getForEditing(id);

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { RequireAuth } from "@/lib/AuthContext";
 import { AdminShell } from "@/components/AdminShell";
 import { api } from "@/lib/api-client";
@@ -38,7 +39,7 @@ export default function ContactSubmissionDetailPage() {
     <RequireAuth>
       <AdminShell>
         <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <a href="/contact-submissions">Contact Submissions</a> / {item.name}
+          <Link href="/contact-submissions">Contact Submissions</Link> / {item.name}
         </div>
         <h1 style={{ marginBottom: 24 }}>{item.name}</h1>
 

@@ -3,7 +3,7 @@ import type { DecisionLayerContent } from "@renas/shared";
 export function DecisionLayerSection({ content }: { content: unknown }) {
   const c = content as DecisionLayerContent;
   return (
-    <section className="m-decision section--teal" data-theme-bg="teal">
+    <section className="m-decision section--teal" id="decision" aria-label="Decision layer" data-theme-bg="teal">
       <div className="container m-decision__grid">
         <div className="m-decision__sticky">
           {c.eyebrow && (

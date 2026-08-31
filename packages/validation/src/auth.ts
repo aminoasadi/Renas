@@ -11,6 +11,12 @@ export const verifyOtpSchema = z.object({
 });
 export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 
+export const passwordLoginSchema = z.object({
+  username: z.string().min(1).max(100),
+  password: z.string().min(1).max(200),
+});
+export type PasswordLoginInput = z.infer<typeof passwordLoginSchema>;
+
 export const createUserSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(200),

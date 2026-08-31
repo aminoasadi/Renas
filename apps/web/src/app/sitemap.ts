@@ -6,14 +6,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { pages, posts } = await getSitemapEntries();
 
   const pageEntries: MetadataRoute.Sitemap = pages.map((p) => ({
-    url: `${config.webUrl}/${p.slug === "home" ? "" : p.slug}`,
+    url: `${config.webUrl}/${p.locale}/${p.slug === "home" ? "" : p.slug}`,
     lastModified: new Date(p.updatedAt),
   }));
 
   const postEntries: MetadataRoute.Sitemap = posts.map((p) => ({
-    url: `${config.webUrl}/blog/${p.slug}`,
+    url: `${config.webUrl}/${p.locale}/blog/${p.slug}`,
     lastModified: new Date(p.updatedAt),
   }));
 
-  return [...pageEntries, { url: `${config.webUrl}/blog`, lastModified: new Date() }, ...postEntries];
+  const blogIndexEntries: MetadataRoute.Sitemap = ["en", "fa"].map((locale) => ({
+    url: `${config.webUrl}/${locale}/blog`,
+    lastModified: new Date(),
+  }));
+
+  return [...pageEntries, ...blogIndexEntries, ...postEntries];
 }

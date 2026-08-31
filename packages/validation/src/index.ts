@@ -5,3 +5,4 @@ export * from "./forms";
 export * from "./pages";
 export * from "./blog";
 export * from "./settings";
+export * from "./faq";

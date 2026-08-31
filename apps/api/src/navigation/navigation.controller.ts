@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Put, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Put, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { updateNavigationSchema } from "@renas/validation";
 import { AuditAction } from "@renas/shared";
@@ -25,9 +25,15 @@ export class NavigationController {
   }
 
   @Put(":key")
-  async update(@Param("key") key: "HEADER" | "FOOTER", @Body() body: unknown, @CurrentUser() actor: User, @Req() req: Request) {
+  async update(
+    @Param("key") key: "HEADER" | "FOOTER",
+    @Query("locale") locale: string = "en",
+    @Body() body: unknown,
+    @CurrentUser() actor: User,
+    @Req() req: Request,
+  ) {
     const input = updateNavigationSchema.parse(body);
-    const nav = await this.navigation.update(key, input);
+    const nav = await this.navigation.update(key, locale, input);
     await this.audit.record({
       userId: actor.id,
       action: AuditAction.UPDATE_NAVIGATION,

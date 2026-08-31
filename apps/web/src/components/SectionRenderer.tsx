@@ -1,5 +1,6 @@
 import type { AnyPageSection, PageSectionType } from "@renas/shared";
 import { sectionContentSchemas } from "@renas/validation";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { HeroSection } from "./sections/HeroSection";
 import { RichTextSection } from "./sections/RichTextSection";
 import { ProcessSection } from "./sections/ProcessSection";
@@ -15,6 +16,15 @@ import { CTASection } from "./sections/CTASection";
 import { ImageSection } from "./sections/ImageSection";
 import { ImageTextSection } from "./sections/ImageTextSection";
 import { FaqSection } from "./sections/FaqSection";
+import { SupplyEquationSection } from "./sections/SupplyEquationSection";
+import { HeavyVehicleSection } from "./sections/HeavyVehicleSection";
+import { RequirementComposerSection } from "./sections/RequirementComposerSection";
+import { PageMastheadSection } from "./sections/PageMastheadSection";
+import { EditorialDossierSection } from "./sections/EditorialDossierSection";
+import { SpecTableSection } from "./sections/SpecTableSection";
+import { StageDossierSection } from "./sections/StageDossierSection";
+import { NarrativeFeatureSection } from "./sections/NarrativeFeatureSection";
+import { GlossarySection } from "./sections/GlossarySection";
 
 /**
  * The controlled section registry, frontend side. A section's `type` is
@@ -24,7 +34,7 @@ import { FaqSection } from "./sections/FaqSection";
  * frontend component) fails gracefully by rendering nothing rather than
  * crashing the page.
  */
-const sectionRegistry: Record<PageSectionType, React.ComponentType<{ content: unknown }>> = {
+const sectionRegistry: Record<PageSectionType, React.ComponentType<{ content: unknown; locale?: Locale }>> = {
   hero: HeroSection,
   rich_text: RichTextSection,
   process: ProcessSection,
@@ -40,9 +50,18 @@ const sectionRegistry: Record<PageSectionType, React.ComponentType<{ content: un
   image: ImageSection,
   image_text: ImageTextSection,
   faq: FaqSection,
+  supply_equation: SupplyEquationSection,
+  heavy_vehicle_focus: HeavyVehicleSection,
+  requirement_composer: RequirementComposerSection,
+  page_masthead: PageMastheadSection,
+  editorial_dossier: EditorialDossierSection,
+  spec_table: SpecTableSection,
+  stage_dossier: StageDossierSection,
+  narrative_feature: NarrativeFeatureSection,
+  glossary: GlossarySection,
 };
 
-export function SectionRenderer({ sections }: { sections: AnyPageSection[] }) {
+export function SectionRenderer({ sections, locale = DEFAULT_LOCALE }: { sections: AnyPageSection[]; locale?: Locale }) {
   return (
     <>
       {sections
@@ -60,13 +79,12 @@ export function SectionRenderer({ sections }: { sections: AnyPageSection[] }) {
           const result = schema.safeParse(section.content);
           if (!result.success) {
             if (process.env.NODE_ENV !== "production") {
-              // eslint-disable-next-line no-console
               console.error(`Invalid content for section ${section.id} (${section.type}):`, result.error.issues);
             }
             return null;
           }
 
-          return <Component key={section.id} content={result.data} />;
+          return <Component key={section.id} content={result.data} locale={locale} />;
         })}
     </>
   );

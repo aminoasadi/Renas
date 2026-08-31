@@ -1,0 +1,108 @@
+/* ---------------------------------------------------------------
+   ANJOMAN — Persian/Farsi display + mono-equivalent typeface.
+   Static instances (not a variable font), so each weight is its own
+   @font-face at one exact `font-weight` value rather than a range —
+   ordinary standard weights (400/500/700) cover almost all UI; the
+   extra faces beyond Black (UltraBold/Heavy/SuperHeavy) are wired at
+   distinct values above 900 so they stay reachable if ever needed.
+   --------------------------------------------------------------- */
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Thin.ttf") format("truetype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-UltraBold.ttf") format("truetype");
+  font-weight: 925;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-Heavy.ttf") format("truetype");
+  font-weight: 950;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Anjoman";
+  src: url("/fonts/anjoman/Anjoman-SuperHeavy.ttf") format("truetype");
+  font-weight: 1000;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-fa: "Anjoman", Tahoma, "Iranian Sans", sans-serif;
+}
+
+/* Persian pages use Anjoman for everything — headlines, body copy and
+   the mono-styled eyebrows/metadata alike — rather than mixing in the
+   Latin mono face, since Anjoman is the only face guaranteed to render
+   the Arabic-script glyphs at every weight the design system reaches
+   for (500 body, 700 emphasis, etc.). Scoped to [dir="rtl"] so it
+   applies automatically off the same attribute the layout already sets
+   per-locale, no separate class needed. */
+[dir="rtl"] {
+  --font-display: var(--font-fa);
+  --font-mono: var(--font-fa);
+}

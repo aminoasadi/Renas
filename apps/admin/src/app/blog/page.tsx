@@ -33,6 +33,7 @@ export default function BlogListPage() {
             <thead>
               <tr>
                 <th>Title</th>
+                <th>Locale</th>
                 <th>Status</th>
                 <th>Author</th>
                 <th>Categories</th>
@@ -47,6 +48,9 @@ export default function BlogListPage() {
                     <Link href={`/blog/${post.id}`}>{post.title}</Link>
                   </td>
                   <td>
+                    <span className="admin-badge">{post.locale === "fa" ? "فارسی" : "English"}</span>
+                  </td>
+                  <td>
                     <StatusBadge status={post.status} hasUnpublishedChanges={hasUnpublishedChanges(post)} />
                   </td>
                   <td className="meta">{post.author?.name ?? "—"}</td>
@@ -57,7 +61,7 @@ export default function BlogListPage() {
               ))}
               {posts.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="meta">
+                  <td colSpan={7} className="meta">
                     No posts yet.
                   </td>
                 </tr>

@@ -3,10 +3,41 @@
 import { useState } from "react";
 import { clientConfig as config } from "@/lib/client-config";
 import { trackEvent } from "@/lib/analytics";
+import type { Locale } from "@/lib/i18n";
 
 type FieldErrors = Record<string, string>;
 
-export function ContactForm() {
+const COPY = {
+  en: {
+    name: "NAME",
+    company: "COMPANY",
+    email: "EMAIL",
+    phone: "PHONE",
+    subject: "SUBJECT",
+    message: "MESSAGE",
+    send: "SEND MESSAGE",
+    sending: "SENDING…",
+    success: "Message sent. We’ll get back to you shortly.",
+    genericError: "Something went wrong. Please try again.",
+    networkError: "Could not reach the server. Please check your connection and try again.",
+  },
+  fa: {
+    name: "نام",
+    company: "شرکت",
+    email: "ایمیل",
+    phone: "تلفن",
+    subject: "موضوع",
+    message: "پیام",
+    send: "ارسال پیام",
+    sending: "در حال ارسال…",
+    success: "پیام شما ارسال شد. به‌زودی پاسخ می‌دهیم.",
+    genericError: "مشکلی پیش آمد. لطفاً دوباره تلاش کنید.",
+    networkError: "امکان اتصال به سرور نبود. اتصال اینترنت خود را بررسی و دوباره تلاش کنید.",
+  },
+};
+
+export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
+  const t = COPY[locale];
   const [values, setValues] = useState({ name: "", company: "", email: "", phone: "", subject: "", message: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "success" | "error">("idle");
@@ -40,7 +71,7 @@ export function ContactForm() {
           }
           setErrors(fieldErrors);
         }
-        setErrorMessage(body?.error?.message ?? "Something went wrong. Please try again.");
+        setErrorMessage(body?.error?.message ?? t.genericError);
         setStatus("error");
         return;
       }
@@ -48,33 +79,25 @@ export function ContactForm() {
       trackEvent("contact_submitted");
       setStatus("success");
     } catch {
-      setErrorMessage("Could not reach the server. Please check your connection and try again.");
+      setErrorMessage(t.networkError);
       setStatus("error");
     }
   }
 
+  // Page chrome (section, container, headline) belongs to the route that
+  // renders this — the contact page composes it beside a statement column,
+  // so the form owns nothing but itself.
   if (status === "success") {
-    return (
-      <div className="container" style={{ paddingBlock: "var(--sp-9)" }}>
-        <div className="m-form-banner m-form-banner--success">Message sent. We'll get back to you shortly.</div>
-      </div>
-    );
+    return <div className="m-form-banner m-form-banner--success">{t.success}</div>;
   }
 
   return (
-    <section className="section section--cream">
-      <div className="container" style={{ maxWidth: "640px" }}>
-        <p className="eyebrow">CONTACT</p>
-        <h2 className="headline" style={{ fontSize: "var(--fs-h2)", margin: "var(--sp-4) 0 var(--sp-7)" }}>
-          Get in touch.
-        </h2>
-
-        <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate>
           {status === "error" && <div className="m-form-banner m-form-banner--error">{errorMessage}</div>}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-5)", marginBottom: "var(--sp-5)" }}>
             <div>
-              <label className="meta">NAME</label>
+              <label className="meta">{t.name}</label>
               <input
                 className="m-composer__input"
                 style={{ color: "var(--charcoal)", borderColor: "var(--rule-on-cream)" }}
@@ -85,7 +108,7 @@ export function ContactForm() {
               {errors.name && <p className="m-field-error">{errors.name}</p>}
             </div>
             <div>
-              <label className="meta">COMPANY</label>
+              <label className="meta">{t.company}</label>
               <input
                 className="m-composer__input"
                 style={{ color: "var(--charcoal)", borderColor: "var(--rule-on-cream)" }}
@@ -97,7 +120,7 @@ export function ContactForm() {
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-5)", marginBottom: "var(--sp-5)" }}>
             <div>
-              <label className="meta">EMAIL</label>
+              <label className="meta">{t.email}</label>
               <input
                 type="email"
                 className="m-composer__input"
@@ -109,7 +132,7 @@ export function ContactForm() {
               {errors.email && <p className="m-field-error">{errors.email}</p>}
             </div>
             <div>
-              <label className="meta">PHONE</label>
+              <label className="meta">{t.phone}</label>
               <input
                 className="m-composer__input"
                 style={{ color: "var(--charcoal)", borderColor: "var(--rule-on-cream)" }}
@@ -120,7 +143,7 @@ export function ContactForm() {
           </div>
 
           <div style={{ marginBottom: "var(--sp-5)" }}>
-            <label className="meta">SUBJECT</label>
+            <label className="meta">{t.subject}</label>
             <input
               className="m-composer__input"
               style={{ color: "var(--charcoal)", borderColor: "var(--rule-on-cream)" }}
@@ -130,7 +153,7 @@ export function ContactForm() {
           </div>
 
           <div style={{ marginBottom: "var(--sp-6)" }}>
-            <label className="meta">MESSAGE</label>
+            <label className="meta">{t.message}</label>
             <textarea
               className="m-composer__input"
               style={{ color: "var(--charcoal)", borderColor: "var(--rule-on-cream)", resize: "vertical" }}
@@ -145,10 +168,8 @@ export function ContactForm() {
           <input type="text" name="company_website" tabIndex={-1} autoComplete="off" style={{ position: "absolute", left: "-9999px" }} aria-hidden="true" />
 
           <button type="submit" className="btn btn--primary" disabled={status === "submitting"}>
-            {status === "submitting" ? "SENDING…" : "SEND MESSAGE"} <span className="arrow">↗</span>
+            {status === "submitting" ? t.sending : t.send} <span className="arrow">↗</span>
           </button>
-        </form>
-      </div>
-    </section>
+    </form>
   );
 }

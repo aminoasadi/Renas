@@ -22,6 +22,7 @@ import { RedirectsModule } from "./redirects/redirects.module";
 import { SupplyRequestsModule } from "./supply-requests/supply-requests.module";
 import { ContactModule } from "./contact/contact.module";
 import { AuditLogsModule } from "./audit-logs/audit-logs.module";
+import { FaqModule } from "./faq/faq.module";
 import { HealthController } from "./health/health.controller";
 
 @Module({
@@ -59,6 +60,7 @@ import { HealthController } from "./health/health.controller";
     SupplyRequestsModule,
     ContactModule,
     AuditLogsModule,
+    FaqModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

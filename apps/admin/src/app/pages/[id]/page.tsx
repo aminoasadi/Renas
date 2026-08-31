@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { RequireAuth, useAuth } from "@/lib/AuthContext";
 import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -27,6 +28,20 @@ const SECTION_DEFAULTS: Record<string, unknown> = {
   image: { media: null },
   image_text: { headline: "Headline", body: "Body copy.", media: null, mediaPosition: "left" },
   faq: { headline: "FAQ", items: [] },
+  supply_equation: {
+    terms: [
+      { term: "a", label: "TERM A", copy: "" },
+      { term: "b", label: "TERM B", copy: "", isResult: true },
+    ],
+  },
+  heavy_vehicle_focus: { headline: "Headline", media: null },
+  requirement_composer: { headline: "Build your requirement." },
+  page_masthead: { variant: "stacked", kicker: "KICKER", headline: "Page headline", standfirst: "Opening paragraph." },
+  editorial_dossier: { headline: "Dossier headline", chapters: [{ id: "chapter-one", number: "01", title: "Chapter one", body: ["Paragraph."] }] },
+  spec_table: { headline: "Spec table headline", groups: [{ id: "group-one", title: "Group one", rows: [{ term: "Term", detail: "Detail" }] }] },
+  stage_dossier: { headline: "Stage dossier headline", stages: [{ number: "01", title: "Stage one", body: "Paragraph." }] },
+  narrative_feature: { headline: "Feature headline", blocks: [{ kind: "paragraph", text: "Opening paragraph." }] },
+  glossary: { headline: "Glossary headline", entries: [{ term: "Term", definition: "Definition." }] },
 };
 
 export default function PageEditorPage() {
@@ -44,6 +59,7 @@ export default function PageEditorPage() {
   const [revisionsOpen, setRevisionsOpen] = useState(false);
   const [revisions, setRevisions] = useState<Revision[] | null>(null);
   const [toast, setToast] = useState("");
+  const [siblingPageId, setSiblingPageId] = useState<string | null | undefined>(undefined);
 
   const load = useCallback(async () => {
     const p = await api<AdminPage>(`/pages/${params.id}`);
@@ -51,6 +67,11 @@ export default function PageEditorPage() {
     setTitle(p.title);
     setSlug(p.slug);
     setDirty(false);
+
+    const otherLocale = p.locale === "fa" ? "en" : "fa";
+    const all = await api<AdminPage[]>("/pages");
+    const sibling = all.find((other) => other.slug === p.slug && other.locale === otherLocale);
+    setSiblingPageId(sibling ? sibling.id : null);
   }, [params.id]);
 
   useEffect(() => {
@@ -115,8 +136,13 @@ export default function PageEditorPage() {
     setPage((prev) =>
       prev ? { ...prev, sections: orderedIds.map((id) => prev.sections.find((s) => s.id === id)!) } : prev,
     );
-    await api(`/pages/${page!.id}/sections/reorder`, { method: "POST", body: { orderedIds } });
-    setDirty(true);
+    try {
+      await api(`/pages/${page!.id}/sections/reorder`, { method: "POST", body: { orderedIds } });
+      setDirty(true);
+    } catch {
+      setToast("Failed to reorder sections — reloading current order.");
+      await load();
+    }
   }
 
   async function addSection(type: string) {
@@ -178,7 +204,27 @@ export default function PageEditorPage() {
     <RequireAuth>
       <AdminShell>
         <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <a href="/pages">Pages</a> / {page.title} {currentSection}
+          <Link href="/pages">Pages</Link> / {page.title} {currentSection}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <button className="admin-btn admin-btn--sm admin-btn--primary" disabled>
+            {page.locale === "fa" ? "فارسی" : "English"}
+          </button>
+          {siblingPageId === undefined ? null : siblingPageId ? (
+            <Link href={`/pages/${siblingPageId}`} className="admin-btn admin-btn--sm admin-btn--ghost">
+              {page.locale === "fa" ? "English" : "فارسی"}
+            </Link>
+          ) : (
+            <button
+              className="admin-btn admin-btn--sm admin-btn--ghost"
+              onClick={() =>
+                router.push(`/pages/new?locale=${page.locale === "fa" ? "en" : "fa"}&slug=${encodeURIComponent(page.slug)}`)
+              }
+            >
+              + Create {page.locale === "fa" ? "English" : "فارسی"} version
+            </button>
+          )}
         </div>
 
         {dirty && <div className="unsaved-banner">You have unsaved changes. Save Draft before leaving this page.</div>}

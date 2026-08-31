@@ -13,6 +13,7 @@ const NAV: { section: string; items: NavItem[] }[] = [
     items: [
       { href: "/pages", label: "Pages" },
       { href: "/blog", label: "Blog" },
+      { href: "/faq", label: "FAQ" },
       { href: "/media", label: "Media" },
     ],
   },
@@ -48,6 +49,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/renas-mark.png" alt="" className="admin-sidebar__mark" />
           RENAS<span className="dot">.</span> CMS
         </div>
 

@@ -55,6 +55,7 @@ export default function PagesListPage() {
               <tr>
                 <th>Title</th>
                 <th>Slug</th>
+                <th>Locale</th>
                 <th>Status</th>
                 <th>Last Updated</th>
                 <th>Published At</th>
@@ -68,6 +69,9 @@ export default function PagesListPage() {
                   </td>
                   <td className="meta">/{page.slug === "home" ? "" : page.slug}</td>
                   <td>
+                    <span className="admin-badge">{page.locale === "fa" ? "فارسی" : "English"}</span>
+                  </td>
+                  <td>
                     <StatusBadge status={page.status} hasUnpublishedChanges={hasUnpublishedChanges(page)} />
                   </td>
                   <td className="meta">{new Date(page.updatedAt).toLocaleString()}</td>
@@ -76,7 +80,7 @@ export default function PagesListPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="meta">
+                  <td colSpan={6} className="meta">
                     No pages match.
                   </td>
                 </tr>

@@ -10,4 +10,5 @@ export const revalidationTags = {
   blogPost: (slug: string) => `blog:post:${slug}`,
   navigation: () => "navigation",
   siteSettings: () => "site-settings",
+  faqList: () => "faq:list",
 } as const;

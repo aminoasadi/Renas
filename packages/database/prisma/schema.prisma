@@ -58,14 +58,18 @@ enum UserStatus {
 }
 
 model User {
-  id          String     @id @default(uuid()) @db.Uuid
-  email       String     @unique
-  name        String
-  role        Role
-  status      UserStatus @default(ACTIVE)
-  lastLoginAt DateTime?  @db.Timestamptz
-  createdAt   DateTime   @default(now()) @db.Timestamptz
-  updatedAt   DateTime   @updatedAt @db.Timestamptz
+  id           String     @id @default(uuid()) @db.Uuid
+  email        String     @unique
+  name         String
+  role         Role
+  status       UserStatus @default(ACTIVE)
+  // Optional password login, alongside the default OTP flow — set only for
+  // accounts that opt into it (see AuthService.loginWithPassword).
+  username     String?    @unique
+  passwordHash String?
+  lastLoginAt  DateTime?  @db.Timestamptz
+  createdAt    DateTime   @default(now()) @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @db.Timestamptz
 
   sessions        Session[]
   otpCodes        OtpCode[]
@@ -129,24 +133,29 @@ model AuditLog {
 // ---------------------------------------------------------------
 
 model SiteSettings {
-  id                    String      @id @default(uuid()) @db.Uuid
-  companyName           String
-  defaultSeoTitle       String?
-  defaultSeoDescription String?
-  logoMediaId           String?     @db.Uuid
-  logoMedia             MediaAsset? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
-  faviconMediaId        String?     @db.Uuid
-  faviconMedia          MediaAsset? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
-  contactEmail          String?
-  phone                 String?
-  whatsapp              String?
-  linkedin              String?
-  officeAddress         String?
-  footerText            String?
-  socialLinks           Json?
-  defaultOgImageId      String?     @db.Uuid
-  defaultOgImage        MediaAsset? @relation("SettingsOgImage", fields: [defaultOgImageId], references: [id], onDelete: SetNull)
-  updatedAt             DateTime    @updatedAt @db.Timestamptz
+  id                      String      @id @default(uuid()) @db.Uuid
+  companyName             String
+  companyNameFa           String?
+  defaultSeoTitle         String?
+  defaultSeoTitleFa       String?
+  defaultSeoDescription   String?
+  defaultSeoDescriptionFa String?
+  logoMediaId             String?     @db.Uuid
+  logoMedia               MediaAsset? @relation("SettingsLogo", fields: [logoMediaId], references: [id], onDelete: SetNull)
+  faviconMediaId          String?     @db.Uuid
+  faviconMedia            MediaAsset? @relation("SettingsFavicon", fields: [faviconMediaId], references: [id], onDelete: SetNull)
+  contactEmail            String?
+  phone                   String?
+  whatsapp                String?
+  linkedin                String?
+  officeAddress           String?
+  officeAddressFa         String?
+  footerText              String?
+  footerTextFa            String?
+  socialLinks             Json?
+  defaultOgImageId        String?     @db.Uuid
+  defaultOgImage          MediaAsset? @relation("SettingsOgImage", fields: [defaultOgImageId], references: [id], onDelete: SetNull)
+  updatedAt               DateTime    @updatedAt @db.Timestamptz
 }
 
 enum NavigationKey {
@@ -171,10 +180,14 @@ model NavigationItem {
   target       String     @default("_self")
   position     Int
   isVisible    Boolean    @default(true)
+  /// Items are filtered by locale when a nav is read for rendering — one
+  /// Navigation row (keyed by HEADER/FOOTER) holds both locales' items,
+  /// ordered independently within each locale.
+  locale       String     @default("en")
   createdAt    DateTime   @default(now()) @db.Timestamptz
   updatedAt    DateTime   @updatedAt @db.Timestamptz
 
-  @@index([navigationId, position])
+  @@index([navigationId, locale, position])
 }
 
 // ---------------------------------------------------------------
@@ -244,6 +257,15 @@ enum PageSectionType {
   image
   image_text
   faq
+  supply_equation
+  heavy_vehicle_focus
+  requirement_composer
+  page_masthead
+  editorial_dossier
+  spec_table
+  stage_dossier
+  narrative_feature
+  glossary
 }
 
 model PageSection {
@@ -325,7 +347,8 @@ model BlogTag {
 model BlogPost {
   id                String         @id @default(uuid()) @db.Uuid
   title             String
-  slug              String         @unique
+  slug              String
+  locale            String         @default("en")
   excerpt           String?
   content           Json
   coverImageId      String?        @db.Uuid
@@ -341,11 +364,24 @@ model BlogPost {
   createdAt         DateTime       @default(now()) @db.Timestamptz
   updatedAt         DateTime       @updatedAt @db.Timestamptz
 
-  categories BlogPostCategory[]
-  tags       BlogPostTag[]
+  categories    BlogPostCategory[]
+  tags          BlogPostTag[]
+  galleryImages BlogPostImage[]
 
+  @@unique([slug, locale])
   @@index([status])
   @@index([scheduledAt])
+}
+
+model BlogPostImage {
+  id         String     @id @default(uuid()) @db.Uuid
+  blogPostId String     @db.Uuid
+  blogPost   BlogPost   @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+  mediaId    String     @db.Uuid
+  media      MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  position   Int
+
+  @@unique([blogPostId, position])
 }
 
 model BlogPostCategory {
@@ -388,6 +424,7 @@ model MediaAsset {
 
   seoUses           SeoMetadata[]
   blogCovers        BlogPost[]
+  blogGalleryUses   BlogPostImage[]
   authorAvatars     Author[]
   settingsLogoOf    SiteSettings[]  @relation("SettingsLogo")
   settingsFaviconOf SiteSettings[]  @relation("SettingsFavicon")
@@ -492,4 +529,23 @@ model ContactSubmission {
 
   @@index([status])
   @@index([createdAt])
+}
+
+/// A site-wide FAQ list, managed as one ordered set from the admin panel —
+/// distinct from the "faq" PageSectionType, which is a per-page content
+/// block. Whole-list replace on save (see NavigationItem for the same
+/// pattern), so `position` is always recomputed from array order.
+model FaqItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  question  String
+  answer    String
+  position  Int
+  isVisible Boolean  @default(true)
+  /// Each locale keeps its own ordered list — replaceAll() operates on
+  /// one locale's rows at a time, not the whole table.
+  locale    String   @default("en")
+  createdAt DateTime @default(now()) @db.Timestamptz
+  updatedAt DateTime @updatedAt @db.Timestamptz
+
+  @@index([locale, position])
 }

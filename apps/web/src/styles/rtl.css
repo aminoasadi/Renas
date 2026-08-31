@@ -1,0 +1,97 @@
+/* ---------------------------------------------------------------
+   RTL OVERRIDES (Persian)
+   Most of the design system's flex/grid layouts already mirror for
+   free once `dir="rtl"` is set on <html> — `direction` is inherited
+   and both flexbox main-axis order and CSS Grid column order resolve
+   relative to it per spec, with no extra CSS. What does NOT auto-flip
+   is anything using a physical value explicitly (text-align: left/
+   right, left:/right: offsets, margin/padding/border-*-left/right) —
+   this file is the complete list of those in motion.css/base.css,
+   each mirrored here rather than rewritten in place, so the LTR
+   stylesheet stays exactly as authored and this stays easy to audit
+   against it.
+   --------------------------------------------------------------- */
+
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .skip-link { left: auto; right: -9999px; }
+[dir="rtl"] .skip-link:focus { left: auto; right: var(--page-margin); }
+
+/* Nav underline reveal — should grow from the reading-start edge. */
+[dir="rtl"] .m-nav__rule { left: 100%; right: 0; }
+[dir="rtl"] .m-nav a:hover .m-nav__rule,
+[dir="rtl"] .m-nav a:focus-visible .m-nav__rule { left: 0; right: auto; }
+
+/* Component Index list rows — label text reads from the right. */
+[dir="rtl"] .m-index__item { text-align: right; }
+
+/* Footer meta column — mirror its edge-alignment per breakpoint. */
+[dir="rtl"] .m-footer__meta { align-items: flex-start; text-align: left; }
+@media (max-width: 860px) {
+  [dir="rtl"] .m-footer__meta { align-items: flex-end; text-align: right; }
+}
+
+/* Journal index — number/date columns swap sides with the reading order. */
+[dir="rtl"] .m-journal__date { text-align: left; }
+@media (max-width: 860px) {
+  [dir="rtl"] .m-journal__date { text-align: right; }
+}
+
+/* Editorial Dossier — key-point bullets sit before the text in reading order. */
+[dir="rtl"] .m-dossier__chapter ul li { padding-left: 0; padding-right: var(--sp-4); }
+[dir="rtl"] .m-dossier__chapter ul li::before { left: auto; right: 0; }
+
+/* Spec Table — first/last column emphasis mirrors with reading direction. */
+[dir="rtl"] .m-spectable__table { text-align: right; }
+[dir="rtl"] .m-spectable__table thead th { text-align: right; }
+[dir="rtl"] .m-spectable__table td:first-child { padding-right: 0; padding-left: var(--sp-5); }
+
+/* Stage Dossier — the numbered rule and stage numbers sit on the
+   reading-start edge, with the stage body indented away from it. */
+[dir="rtl"] .m-stagedossier__list::before { left: auto; right: 42px; }
+[dir="rtl"] .m-stagedossier__stage { padding-left: 0; padding-right: 96px; }
+[dir="rtl"] .m-stagedossier__num { left: auto; right: 0; text-align: left; }
+@media (max-width: 640px) {
+  [dir="rtl"] .m-stagedossier__list::before { right: 20px; }
+  [dir="rtl"] .m-stagedossier__stage { padding-right: 52px; }
+}
+
+/* Narrative Feature — pull-quote rule sits on the reading-start edge. */
+[dir="rtl"] blockquote.m-narrative__block {
+  padding-left: 0;
+  padding-right: var(--sp-6);
+  border-left: none;
+  border-right: 2px solid var(--gold);
+}
+/* The drop cap float must follow the reading direction too. */
+[dir="rtl"] .m-narrative p.m-narrative__block:first-of-type::first-letter {
+  float: right;
+  padding: 6px 0 0 8px;
+}
+
+/* Generic left-aligned utility text used across a handful of section
+   components (FAQ answers, plain body copy set inline via style=) —
+   safest single high-value catch-all: BODY's own default is already
+   `direction: rtl`, so unset explicit LTR text-align where it was set
+   to visually match the (now right-to-left) reading flow. */
+[dir="rtl"] .body-lg,
+[dir="rtl"] .m-article-body,
+[dir="rtl"] .m-article-body ul,
+[dir="rtl"] .m-article-body ol {
+  text-align: right;
+}
+[dir="rtl"] .m-article-body ul,
+[dir="rtl"] .m-article-body ol {
+  padding-left: 0;
+  padding-right: 1.4em;
+}
+[dir="rtl"] .m-article-body blockquote {
+  border-left: none;
+  border-right: 3px solid var(--gold);
+  padding-left: 0;
+  padding-right: var(--sp-5);
+}
+[dir="rtl"] .m-article-body th,
+[dir="rtl"] .m-article-body td { text-align: right; }

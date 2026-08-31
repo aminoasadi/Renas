@@ -12,7 +12,8 @@ html, body {
   background: var(--cream);
   color: var(--charcoal);
   font-family: var(--font-display);
-  min-height: 100vh;
+  height: 100%;
+  overflow: hidden;
 }
 
 a { color: inherit; }
@@ -21,7 +22,7 @@ a { color: inherit; }
 .admin-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
-  min-height: 100vh;
+  height: 100vh;
 }
 .admin-sidebar {
   background: var(--charcoal);
@@ -30,14 +31,20 @@ a { color: inherit; }
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
+  height: 100vh;
+  overflow-y: auto;
 }
 .admin-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-family: var(--font-mono);
   font-size: 16px;
   letter-spacing: var(--ls-wide);
   margin-bottom: var(--sp-6);
 }
 .admin-sidebar__brand .dot { color: var(--gold); }
+.admin-sidebar__mark { height: 20px; width: auto; filter: invert(1); }
 .admin-nav-link {
   display: block;
   padding: 10px 12px;
@@ -77,6 +84,8 @@ a { color: inherit; }
 .admin-main {
   padding: var(--sp-6) var(--sp-7);
   max-width: 1200px;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .admin-page-header {

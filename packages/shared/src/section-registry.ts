@@ -27,6 +27,20 @@ export const PAGE_SECTION_TYPES = [
   "image",
   "image_text",
   "faq",
+  "supply_equation",
+  "heavy_vehicle_focus",
+  "requirement_composer",
+  // --- Long-form editorial archetypes -------------------------------
+  // Deliberately distinct from the homepage's section set: these are
+  // prose- and table-led compositions built to carry substantially more
+  // indexable copy (real headings, definition lists, Q&A) than the
+  // homepage's typography- and motion-led sections do.
+  "page_masthead",
+  "editorial_dossier",
+  "spec_table",
+  "stage_dossier",
+  "narrative_feature",
+  "glossary",
 ] as const;
 
 export type PageSectionType = (typeof PAGE_SECTION_TYPES)[number];
@@ -190,6 +204,165 @@ export interface FaqContent {
   items: FaqItem[];
 }
 
+export interface SupplyEquationTerm {
+  term: string;
+  label: string;
+  copy: string;
+  isResult?: boolean;
+}
+export interface SupplyEquationContent {
+  eyebrow?: string;
+  terms: SupplyEquationTerm[];
+  footNote?: string;
+}
+
+export interface HeavyVehicleFocusContent {
+  headline: string;
+  subheadline?: string;
+  body?: string;
+  media: MediaRef;
+  cta?: { label: string; href: string };
+  overlayLabels?: string[];
+}
+
+/**
+ * Only the static surrounding copy is CMS-editable — the multi-step wizard
+ * itself (fields, validation, submission) stays code-driven since it's wired
+ * to the fixed RFQ schema, not arbitrary content.
+ */
+export interface RequirementComposerContent {
+  eyebrow?: string;
+  headline: string;
+  body?: string;
+}
+
+// ---- Long-form editorial archetypes ---------------------------------
+
+/**
+ * Editorial page header. Replaces the homepage's image-grid `hero` on inner
+ * pages: the weight sits in a standfirst and an at-a-glance summary rather
+ * than in photography, so a page opens with indexable prose instead of a
+ * headline alone. `variant` changes the composition, not the content shape.
+ */
+export interface PageMastheadContent {
+  variant: "stacked" | "split" | "indexed";
+  kicker: string;
+  headline: string;
+  /** Long opening paragraph — the page's lede, not a one-line tagline. */
+  standfirst: string;
+  /** Secondary paragraph, shown below the standfirst where present. */
+  intro?: string;
+  /** Scannable "what this page covers" bullets. */
+  summaryPoints?: string[];
+  /** Mono label/value pairs (e.g. SCOPE / REGIONAL TRADE). */
+  meta?: Array<{ label: string; value: string }>;
+  primaryCta?: { label: string; href: string };
+  secondaryCta?: { label: string; href: string };
+}
+
+export interface DossierChapter {
+  /** Slug used for the in-page anchor and the sticky contents list. */
+  id: string;
+  number: string;
+  title: string;
+  /** Each entry renders as its own <p>. */
+  body: string[];
+  /** Optional sub-heading + bullets, rendered as an <h4> + list. */
+  keyPointsTitle?: string;
+  keyPoints?: string[];
+}
+/**
+ * Long-form dossier: a sticky table of contents beside numbered prose
+ * chapters. The heading hierarchy (h2 per chapter, h4 per key-point block)
+ * and the anchor list are the point — this is the most SEO-dense archetype.
+ */
+export interface EditorialDossierContent {
+  eyebrow?: string;
+  headline: string;
+  intro?: string;
+  contentsLabel?: string;
+  chapters: DossierChapter[];
+}
+
+export interface SpecTableRow {
+  term: string;
+  detail: string;
+  /** Optional third column, e.g. typical part types or a note. */
+  note?: string;
+}
+export interface SpecTableGroup {
+  id: string;
+  number?: string;
+  title: string;
+  description?: string;
+  columns?: { term: string; detail: string; note?: string };
+  rows: SpecTableRow[];
+}
+/** Grouped specification tables — structured, scannable, and indexable. */
+export interface SpecTableContent {
+  eyebrow?: string;
+  headline: string;
+  intro?: string;
+  groups: SpecTableGroup[];
+  footNote?: string;
+}
+
+export interface DossierStage {
+  number: string;
+  title: string;
+  /** Mono meta line, e.g. "TYPICALLY 2–5 DAYS". */
+  duration?: string;
+  body: string;
+  inputsTitle?: string;
+  inputs?: string[];
+  outputsTitle?: string;
+  outputs?: string[];
+}
+/**
+ * Annotated stages on a continuous rule. Unlike the homepage's `process`
+ * (index + title + one line), each stage carries a full paragraph plus
+ * explicit "what we need" / "what you get" lists.
+ */
+export interface StageDossierContent {
+  eyebrow?: string;
+  headline: string;
+  intro?: string;
+  stages: DossierStage[];
+  closingNote?: string;
+}
+
+export type NarrativeBlock =
+  | { kind: "paragraph"; text: string }
+  | { kind: "subheading"; text: string }
+  | { kind: "pullquote"; text: string; attribution?: string };
+/**
+ * Long-form narrative feature — drop-capped opening, subheadings and pull
+ * quotes. Pure prose, for pages whose job is to be read rather than scanned.
+ */
+export interface NarrativeFeatureContent {
+  eyebrow?: string;
+  headline: string;
+  standfirst?: string;
+  blocks: NarrativeBlock[];
+}
+
+export interface GlossaryEntry {
+  term: string;
+  definition: string;
+  /** Synonyms / alternate names, rendered as a mono "also:" line. */
+  aka?: string[];
+}
+/**
+ * A real definition list (<dl>) of domain terminology. Semantically rich,
+ * highly indexable, and a natural fit for the system's mono/serif contrast.
+ */
+export interface GlossaryContent {
+  eyebrow?: string;
+  headline: string;
+  intro?: string;
+  entries: GlossaryEntry[];
+}
+
 // ---- Discriminated union --------------------------------------------
 
 export type SectionContentMap = {
@@ -208,6 +381,15 @@ export type SectionContentMap = {
   image: ImageContent;
   image_text: ImageTextContent;
   faq: FaqContent;
+  supply_equation: SupplyEquationContent;
+  heavy_vehicle_focus: HeavyVehicleFocusContent;
+  requirement_composer: RequirementComposerContent;
+  page_masthead: PageMastheadContent;
+  editorial_dossier: EditorialDossierContent;
+  spec_table: SpecTableContent;
+  stage_dossier: StageDossierContent;
+  narrative_feature: NarrativeFeatureContent;
+  glossary: GlossaryContent;
 };
 
 export type PageSectionOf<T extends PageSectionType = PageSectionType> = {

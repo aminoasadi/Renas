@@ -3,7 +3,7 @@ import type { OperationalSignalsContent } from "@renas/shared";
 export function OperationalSignalsSection({ content }: { content: unknown }) {
   const c = content as OperationalSignalsContent;
   return (
-    <section className="m-signals section--charcoal" data-theme-bg="charcoal">
+    <section className="m-signals section--charcoal" id="signals" aria-label="Operational signals" data-theme-bg="charcoal">
       <div className="container">
         {c.eyebrow && <p className="eyebrow">{c.eyebrow}</p>}
         <h2 className="m-signals__headline headline">{c.headline}</h2>

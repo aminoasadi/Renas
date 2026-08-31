@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { RequireAuth } from "@/lib/AuthContext";
 import { AdminShell } from "@/components/AdminShell";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -19,7 +20,9 @@ interface Taxonomy {
 
 export default function BlogEditorPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const [post, setPost] = useState<AdminBlogPost | null>(null);
+  const [siblingPostId, setSiblingPostId] = useState<string | null | undefined>(undefined);
   const [categories, setCategories] = useState<Taxonomy[]>([]);
   const [tags, setTags] = useState<Taxonomy[]>([]);
   const [authors, setAuthors] = useState<Array<{ id: string; name: string }>>([]);
@@ -29,6 +32,7 @@ export default function BlogEditorPage() {
   const [excerpt, setExcerpt] = useState("");
   const [content, setContent] = useState<unknown>(null);
   const [coverImage, setCoverImage] = useState<unknown>(null);
+  const [galleryImages, setGalleryImages] = useState<Array<unknown>>([null, null, null]);
   const [authorId, setAuthorId] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [tagIds, setTagIds] = useState<string[]>([]);
@@ -59,6 +63,12 @@ export default function BlogEditorPage() {
     setExcerpt(p.excerpt ?? "");
     setContent(p.content);
     setCoverImage(p.coverImage ? { id: p.coverImage.id, url: p.coverImage.publicUrl, alt: p.coverImage.alt ?? "" } : null);
+    const sortedGallery = [...p.galleryImages].sort((a, b) => a.position - b.position);
+    const gallerySlots: Array<unknown> = [null, null, null];
+    sortedGallery.forEach((g, i) => {
+      if (i < 3) gallerySlots[i] = { id: g.media.id, url: g.media.publicUrl, alt: g.media.alt ?? "" };
+    });
+    setGalleryImages(gallerySlots);
     setAuthorId(p.authorId ?? "");
     setCategoryIds(p.categories.map((c) => c.category.id));
     setTagIds(p.tags.map((t) => t.tag.id));
@@ -66,6 +76,11 @@ export default function BlogEditorPage() {
     setSeoTitle(p.seoMetadata?.seoTitle ?? "");
     setSeoDescription(p.seoMetadata?.seoDescription ?? "");
     setDirty(false);
+
+    const otherLocale = p.locale === "fa" ? "en" : "fa";
+    const all = await api<AdminBlogPost[]>("/blog");
+    const sibling = all.find((other) => other.slug === p.slug && other.locale === otherLocale);
+    setSiblingPostId(sibling ? sibling.id : null);
   }, [params.id]);
 
   useEffect(() => {
@@ -93,6 +108,7 @@ export default function BlogEditorPage() {
           excerpt,
           content,
           coverImageId: (coverImage as { id: string } | null)?.id ?? null,
+          galleryImageIds: galleryImages.filter(Boolean).map((g) => (g as { id: string }).id),
           authorId: authorId || null,
           categoryIds,
           tagIds,
@@ -157,8 +173,29 @@ export default function BlogEditorPage() {
     <RequireAuth>
       <AdminShell>
         <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <a href="/blog">Blog</a> / {post.title}
+          <Link href="/blog">Blog</Link> / {post.title}
         </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <button className="admin-btn admin-btn--sm admin-btn--primary" disabled>
+            {post.locale === "fa" ? "فارسی" : "English"}
+          </button>
+          {siblingPostId === undefined ? null : siblingPostId ? (
+            <Link href={`/blog/${siblingPostId}`} className="admin-btn admin-btn--sm admin-btn--ghost">
+              {post.locale === "fa" ? "English" : "فارسی"}
+            </Link>
+          ) : (
+            <button
+              className="admin-btn admin-btn--sm admin-btn--ghost"
+              onClick={() =>
+                router.push(`/blog/new?locale=${post.locale === "fa" ? "en" : "fa"}&slug=${encodeURIComponent(post.slug)}`)
+              }
+            >
+              + Create {post.locale === "fa" ? "English" : "فارسی"} version
+            </button>
+          )}
+        </div>
+
         {dirty && <div className="unsaved-banner">You have unsaved changes.</div>}
         {toast && (
           <div className="admin-card" style={{ marginBottom: 16, background: "var(--cream-2)" }}>
@@ -217,6 +254,25 @@ export default function BlogEditorPage() {
             <div className="admin-card">
               <p className="admin-label">Cover Image</p>
               <MediaField value={coverImage} onChange={(m) => { setCoverImage(m); setDirty(true); }} label="" />
+            </div>
+
+            <div className="admin-card">
+              <p className="admin-label">Gallery Images (up to 3)</p>
+              <p className="admin-hint" style={{ marginTop: -4, marginBottom: 12 }}>
+                Shown on the post if uploaded — slots left empty won&rsquo;t appear.
+              </p>
+              {galleryImages.map((img, i) => (
+                <div key={i} style={{ marginBottom: i < galleryImages.length - 1 ? 12 : 0 }}>
+                  <MediaField
+                    value={img}
+                    onChange={(m) => {
+                      setGalleryImages((prev) => prev.map((g, gi) => (gi === i ? m : g)));
+                      setDirty(true);
+                    }}
+                    label={`Image ${i + 1}`}
+                  />
+                </div>
+              ))}
             </div>
 
             <div className="admin-card">

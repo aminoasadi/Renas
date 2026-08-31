@@ -33,6 +33,9 @@ export async function api<T = unknown>(
   const body = await res.json().catch(() => null);
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== "undefined") {
+      window.dispatchEvent(new Event("auth:session-expired"));
+    }
     throw new ApiError(res.status, body?.error?.code ?? "UNKNOWN", body?.error?.message ?? "Request failed", body?.error?.details);
   }
 

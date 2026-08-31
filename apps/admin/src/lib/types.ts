@@ -65,10 +65,12 @@ export interface AdminBlogPost {
   id: string;
   title: string;
   slug: string;
+  locale: string;
   excerpt: string | null;
   content: unknown;
   coverImageId: string | null;
   coverImage: MediaAsset | null;
+  galleryImages: Array<{ id: string; position: number; media: MediaAsset }>;
   authorId: string | null;
   author: { id: string; name: string } | null;
   status: BlogPostStatus;
@@ -102,6 +104,14 @@ export interface NavigationItem {
   url: string;
   isExternal: boolean;
   target: string;
+  position: number;
+  isVisible: boolean;
+}
+
+export interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
   position: number;
   isVisible: boolean;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Field, TextInput, TextAreaInput, MediaField, CtaEditor, ArrayEditor, type CtaValue } from "./shared";
+import { TipTapEditor } from "@/components/TipTapEditor";
 
 type AnyContent = Record<string, any>;
 
@@ -73,6 +74,40 @@ function headlineLinesEditor(lines: string[], onChange: (lines: string[]) => voi
   );
 }
 
+function stringListEditor(
+  label: string,
+  hint: string,
+  items: string[],
+  onChange: (items: string[]) => void,
+  multiline = false,
+) {
+  const Input = multiline ? TextAreaInput : TextInput;
+  return (
+    <Field label={label} hint={hint}>
+      {items.map((item, i) => (
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "flex-start" }}>
+          <div style={{ flex: 1 }}>
+            <Input
+              value={item}
+              onChange={(v: string) => {
+                const next = items.slice();
+                next[i] = v;
+                onChange(next);
+              }}
+            />
+          </div>
+          <button type="button" className="admin-btn admin-btn--sm admin-btn--danger" onClick={() => onChange(items.filter((_, idx) => idx !== i))}>
+            ✕
+          </button>
+        </div>
+      ))}
+      <button type="button" className="admin-btn admin-btn--sm" onClick={() => onChange([...items, ""])}>
+        + Add
+      </button>
+    </Field>
+  );
+}
+
 function renderByType(type: string, c: AnyContent, set: (patch: Partial<AnyContent>) => void): React.ReactNode {
   switch (type) {
     case "hero":
@@ -103,8 +138,8 @@ function renderByType(type: string, c: AnyContent, set: (patch: Partial<AnyConte
 
     case "rich_text":
       return (
-        <Field label="Content (HTML)" hint="Sanitized before rendering — only a safe tag allowlist is preserved.">
-          <TextAreaInput value={c.html ?? ""} onChange={(v) => set({ html: v })} rows={8} />
+        <Field label="Content" hint="Sanitized before rendering — only a safe tag allowlist is preserved.">
+          <TipTapEditor format="html" content={c.html ?? ""} onChange={(html) => set({ html })} />
         </Field>
       );
 
@@ -379,6 +414,260 @@ function renderByType(type: string, c: AnyContent, set: (patch: Partial<AnyConte
                 <>
                   <Field label="Question"><TextInput value={item.question} onChange={(v) => update({ question: v })} /></Field>
                   <Field label="Answer"><TextAreaInput value={item.answer} onChange={(v) => update({ answer: v })} /></Field>
+                </>
+              )}
+            />
+          </Field>
+        </>
+      );
+
+    case "supply_equation":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Terms" hint="At least 2. Mark the last one 'Result' to render it as the equation's outcome.">
+            <ArrayEditor<AnyContent>
+              items={c.terms ?? []}
+              onChange={(v) => set({ terms: v })}
+              newItem={() => ({ term: "", label: "", copy: "", isResult: false })}
+              itemLabel="Term"
+              renderItem={(item, update) => (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--sp-5)" }}>
+                    <Field label="Term key"><TextInput value={item.term} onChange={(v) => update({ term: v })} /></Field>
+                    <Field label="Label"><TextInput value={item.label} onChange={(v) => update({ label: v })} /></Field>
+                  </div>
+                  <Field label="Copy (shown on hover)"><TextAreaInput value={item.copy} onChange={(v) => update({ copy: v })} /></Field>
+                  <label className="admin-checkbox-row">
+                    <input type="checkbox" checked={Boolean(item.isResult)} onChange={(e) => update({ isResult: e.target.checked })} />
+                    This is the result term (e.g. &quot;Delivery&quot;)
+                  </label>
+                </>
+              )}
+            />
+          </Field>
+          <Field label="Foot note"><TextInput value={c.footNote ?? ""} onChange={(v) => set({ footNote: v })} /></Field>
+        </>
+      );
+
+    case "heavy_vehicle_focus":
+      return (
+        <>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Subheadline"><TextInput value={c.subheadline ?? ""} onChange={(v) => set({ subheadline: v })} /></Field>
+          <Field label="Body"><TextAreaInput value={c.body ?? ""} onChange={(v) => set({ body: v })} /></Field>
+          <MediaField value={c.media} onChange={(m) => set({ media: m })} />
+          <Field label="Overlay labels (comma-separated)">
+            <TextInput value={(c.overlayLabels ?? []).join(", ")} onChange={(v) => set({ overlayLabels: v.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
+          </Field>
+          <CtaEditor label="CTA" value={c.cta} onChange={(v: CtaValue | undefined) => set({ cta: v })} />
+        </>
+      );
+
+    case "requirement_composer":
+      return (
+        <>
+          <p className="meta" style={{ marginBottom: "var(--sp-4)" }}>
+            Only the surrounding copy is editable here — the multi-step form itself (fields, validation, submission) is fixed to the RFQ schema and isn&apos;t content-driven.
+          </p>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Body"><TextAreaInput value={c.body ?? ""} onChange={(v) => set({ body: v })} /></Field>
+        </>
+      );
+
+    case "page_masthead":
+      return (
+        <>
+          <Field label="Variant" hint="Changes layout only — content fields stay the same.">
+            <select className="admin-select" value={c.variant ?? "stacked"} onChange={(e) => set({ variant: e.target.value })}>
+              <option value="stacked">Stacked</option>
+              <option value="split">Split (headline/CTA left, standfirst right)</option>
+              <option value="indexed">Indexed (standfirst + numbered summary side by side)</option>
+            </select>
+          </Field>
+          <Field label="Kicker"><TextInput value={c.kicker ?? ""} onChange={(v) => set({ kicker: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Standfirst" hint="The page's opening paragraph — this carries the weight a hero image would on the homepage.">
+            <TextAreaInput value={c.standfirst ?? ""} onChange={(v) => set({ standfirst: v })} rows={4} />
+          </Field>
+          <Field label="Intro (optional second paragraph)"><TextAreaInput value={c.intro ?? ""} onChange={(v) => set({ intro: v })} /></Field>
+          {stringListEditor("Summary points (up to 6)", "Scannable \"what this page covers\" bullets.", c.summaryPoints ?? [], (v) => set({ summaryPoints: v }))}
+          <Field label="Meta (up to 6 label/value pairs)">
+            <ArrayEditor<AnyContent>
+              items={c.meta ?? []}
+              onChange={(v) => set({ meta: v })}
+              newItem={() => ({ label: "", value: "" })}
+              itemLabel="Meta"
+              renderItem={(item, update) => (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <Field label="Label"><TextInput value={item.label} onChange={(v) => update({ label: v })} /></Field>
+                  <Field label="Value"><TextInput value={item.value} onChange={(v) => update({ value: v })} /></Field>
+                </div>
+              )}
+            />
+          </Field>
+          <CtaEditor label="Primary CTA" value={c.primaryCta} onChange={(v: CtaValue | undefined) => set({ primaryCta: v })} />
+          <CtaEditor label="Secondary CTA" value={c.secondaryCta} onChange={(v: CtaValue | undefined) => set({ secondaryCta: v })} />
+        </>
+      );
+
+    case "editorial_dossier":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Intro"><TextAreaInput value={c.intro ?? ""} onChange={(v) => set({ intro: v })} /></Field>
+          <Field label="Contents label"><TextInput value={c.contentsLabel ?? ""} onChange={(v) => set({ contentsLabel: v })} placeholder="CONTENTS" /></Field>
+          <Field label="Chapters">
+            <ArrayEditor<AnyContent>
+              items={c.chapters ?? []}
+              onChange={(v) => set({ chapters: v })}
+              newItem={() => ({ id: "", number: "01", title: "", body: [""], keyPointsTitle: "", keyPoints: [] })}
+              itemLabel="Chapter"
+              renderItem={(item, update) => (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    <Field label="Anchor id" hint="lowercase-with-hyphens, used as #anchor"><TextInput value={item.id} onChange={(v) => update({ id: v })} /></Field>
+                    <Field label="Number"><TextInput value={item.number} onChange={(v) => update({ number: v })} /></Field>
+                  </div>
+                  <Field label="Title"><TextInput value={item.title} onChange={(v) => update({ title: v })} /></Field>
+                  {stringListEditor("Body paragraphs", "One paragraph per row.", item.body ?? [], (v) => update({ body: v }), true)}
+                  <Field label="Key points title"><TextInput value={item.keyPointsTitle ?? ""} onChange={(v) => update({ keyPointsTitle: v })} /></Field>
+                  {stringListEditor("Key points", "Rendered as a bullet list under the title above.", item.keyPoints ?? [], (v) => update({ keyPoints: v }))}
+                </>
+              )}
+            />
+          </Field>
+        </>
+      );
+
+    case "spec_table":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Intro"><TextAreaInput value={c.intro ?? ""} onChange={(v) => set({ intro: v })} /></Field>
+          <Field label="Groups">
+            <ArrayEditor<AnyContent>
+              items={c.groups ?? []}
+              onChange={(v) => set({ groups: v })}
+              newItem={() => ({ id: "", number: "", title: "", description: "", rows: [{ term: "", detail: "" }] })}
+              itemLabel="Group"
+              renderItem={(item, update) => (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
+                    <Field label="Anchor id"><TextInput value={item.id} onChange={(v) => update({ id: v })} /></Field>
+                    <Field label="Number"><TextInput value={item.number ?? ""} onChange={(v) => update({ number: v })} /></Field>
+                  </div>
+                  <Field label="Title"><TextInput value={item.title} onChange={(v) => update({ title: v })} /></Field>
+                  <Field label="Description"><TextAreaInput value={item.description ?? ""} onChange={(v) => update({ description: v })} /></Field>
+                  <Field label="Rows">
+                    <ArrayEditor<AnyContent>
+                      items={item.rows ?? []}
+                      onChange={(v) => update({ rows: v })}
+                      newItem={() => ({ term: "", detail: "", note: "" })}
+                      itemLabel="Row"
+                      renderItem={(row, updateRow) => (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: 8 }}>
+                          <Field label="Term"><TextInput value={row.term} onChange={(v) => updateRow({ term: v })} /></Field>
+                          <Field label="Detail"><TextInput value={row.detail} onChange={(v) => updateRow({ detail: v })} /></Field>
+                          <Field label="Note (optional)"><TextInput value={row.note ?? ""} onChange={(v) => updateRow({ note: v })} /></Field>
+                        </div>
+                      )}
+                    />
+                  </Field>
+                </>
+              )}
+            />
+          </Field>
+          <Field label="Foot note"><TextInput value={c.footNote ?? ""} onChange={(v) => set({ footNote: v })} /></Field>
+        </>
+      );
+
+    case "stage_dossier":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Intro"><TextAreaInput value={c.intro ?? ""} onChange={(v) => set({ intro: v })} /></Field>
+          <Field label="Stages">
+            <ArrayEditor<AnyContent>
+              items={c.stages ?? []}
+              onChange={(v) => set({ stages: v })}
+              newItem={() => ({ number: "01", title: "", duration: "", body: "", inputsTitle: "", inputs: [], outputsTitle: "", outputs: [] })}
+              itemLabel="Stage"
+              renderItem={(item, update) => (
+                <>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: 8 }}>
+                    <Field label="Number"><TextInput value={item.number} onChange={(v) => update({ number: v })} /></Field>
+                    <Field label="Title"><TextInput value={item.title} onChange={(v) => update({ title: v })} /></Field>
+                    <Field label="Duration"><TextInput value={item.duration ?? ""} onChange={(v) => update({ duration: v })} /></Field>
+                  </div>
+                  <Field label="Body"><TextAreaInput value={item.body} onChange={(v) => update({ body: v })} /></Field>
+                  <Field label="Inputs title"><TextInput value={item.inputsTitle ?? ""} onChange={(v) => update({ inputsTitle: v })} placeholder="WHAT WE NEED" /></Field>
+                  {stringListEditor("Inputs", "", item.inputs ?? [], (v) => update({ inputs: v }))}
+                  <Field label="Outputs title"><TextInput value={item.outputsTitle ?? ""} onChange={(v) => update({ outputsTitle: v })} placeholder="WHAT YOU GET" /></Field>
+                  {stringListEditor("Outputs", "", item.outputs ?? [], (v) => update({ outputs: v }))}
+                </>
+              )}
+            />
+          </Field>
+          <Field label="Closing note"><TextAreaInput value={c.closingNote ?? ""} onChange={(v) => set({ closingNote: v })} /></Field>
+        </>
+      );
+
+    case "narrative_feature":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Standfirst"><TextAreaInput value={c.standfirst ?? ""} onChange={(v) => set({ standfirst: v })} /></Field>
+          <Field label="Blocks" hint="Paragraph, subheading, or pull quote — in reading order.">
+            <ArrayEditor<AnyContent>
+              items={c.blocks ?? []}
+              onChange={(v) => set({ blocks: v })}
+              newItem={() => ({ kind: "paragraph", text: "" })}
+              itemLabel="Block"
+              renderItem={(item, update) => (
+                <>
+                  <Field label="Kind">
+                    <select className="admin-select" value={item.kind ?? "paragraph"} onChange={(e) => update({ kind: e.target.value })}>
+                      <option value="paragraph">Paragraph</option>
+                      <option value="subheading">Subheading</option>
+                      <option value="pullquote">Pull quote</option>
+                    </select>
+                  </Field>
+                  <Field label="Text"><TextAreaInput value={item.text ?? ""} onChange={(v) => update({ text: v })} /></Field>
+                  {item.kind === "pullquote" && (
+                    <Field label="Attribution (optional)"><TextInput value={item.attribution ?? ""} onChange={(v) => update({ attribution: v })} /></Field>
+                  )}
+                </>
+              )}
+            />
+          </Field>
+        </>
+      );
+
+    case "glossary":
+      return (
+        <>
+          <Field label="Eyebrow"><TextInput value={c.eyebrow ?? ""} onChange={(v) => set({ eyebrow: v })} /></Field>
+          <Field label="Headline"><TextInput value={c.headline ?? ""} onChange={(v) => set({ headline: v })} /></Field>
+          <Field label="Intro"><TextAreaInput value={c.intro ?? ""} onChange={(v) => set({ intro: v })} /></Field>
+          <Field label="Entries">
+            <ArrayEditor<AnyContent>
+              items={c.entries ?? []}
+              onChange={(v) => set({ entries: v })}
+              newItem={() => ({ term: "", definition: "", aka: [] })}
+              itemLabel="Entry"
+              renderItem={(item, update) => (
+                <>
+                  <Field label="Term"><TextInput value={item.term} onChange={(v) => update({ term: v })} /></Field>
+                  <Field label="Definition"><TextAreaInput value={item.definition} onChange={(v) => update({ definition: v })} /></Field>
+                  <Field label="Also known as (comma-separated)">
+                    <TextInput value={(item.aka ?? []).join(", ")} onChange={(v) => update({ aka: v.split(",").map((s: string) => s.trim()).filter(Boolean) })} />
+                  </Field>
                 </>
               )}
             />

@@ -2,8 +2,11 @@ import { z } from "zod";
 
 export const updateSiteSettingsSchema = z.object({
   companyName: z.string().min(1).max(200).optional(),
+  companyNameFa: z.string().max(200).optional(),
   defaultSeoTitle: z.string().max(300).optional(),
+  defaultSeoTitleFa: z.string().max(300).optional(),
   defaultSeoDescription: z.string().max(500).optional(),
+  defaultSeoDescriptionFa: z.string().max(500).optional(),
   logoMediaId: z.string().uuid().nullable().optional(),
   faviconMediaId: z.string().uuid().nullable().optional(),
   contactEmail: z.string().email().optional().or(z.literal("")),
@@ -11,7 +14,9 @@ export const updateSiteSettingsSchema = z.object({
   whatsapp: z.string().max(50).optional(),
   linkedin: z.string().max(300).optional(),
   officeAddress: z.string().max(500).optional(),
+  officeAddressFa: z.string().max(500).optional(),
   footerText: z.string().max(1000).optional(),
+  footerTextFa: z.string().max(1000).optional(),
   socialLinks: z.record(z.string(), z.string()).optional(),
   defaultOgImageId: z.string().uuid().nullable().optional(),
 });

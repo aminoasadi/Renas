@@ -184,6 +184,149 @@ export const faqContentSchema = z.object({
     .min(1),
 });
 
+export const supplyEquationContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  terms: z
+    .array(
+      z.object({
+        term: z.string().min(1),
+        label: z.string().min(1),
+        copy: z.string().min(1),
+        isResult: z.boolean().optional(),
+      }),
+    )
+    .min(2),
+  footNote: z.string().optional(),
+});
+
+export const heavyVehicleFocusContentSchema = z.object({
+  headline: z.string().min(1),
+  subheadline: z.string().optional(),
+  body: z.string().optional(),
+  media: mediaRefSchema,
+  cta: ctaLink.optional(),
+  overlayLabels: z.array(z.string()).optional(),
+});
+
+export const requirementComposerContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  body: z.string().optional(),
+});
+
+// ---- Long-form editorial archetypes ---------------------------------
+
+// Used as in-page anchor ids, so they must be URL-safe.
+const anchorId = z
+  .string()
+  .min(1)
+  .regex(/^[a-z0-9-]+$/, "Use lowercase letters, numbers and hyphens only");
+
+export const pageMastheadContentSchema = z.object({
+  variant: z.enum(["stacked", "split", "indexed"]),
+  kicker: z.string().min(1),
+  headline: z.string().min(1),
+  standfirst: z.string().min(1),
+  intro: z.string().optional(),
+  summaryPoints: z.array(z.string().min(1)).max(6).optional(),
+  meta: z.array(z.object({ label: z.string().min(1), value: z.string().min(1) })).max(6).optional(),
+  primaryCta: ctaLink.optional(),
+  secondaryCta: ctaLink.optional(),
+});
+
+export const editorialDossierContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  intro: z.string().optional(),
+  contentsLabel: z.string().optional(),
+  chapters: z
+    .array(
+      z.object({
+        id: anchorId,
+        number: z.string().min(1),
+        title: z.string().min(1),
+        body: z.array(z.string().min(1)).min(1),
+        keyPointsTitle: z.string().optional(),
+        keyPoints: z.array(z.string().min(1)).optional(),
+      }),
+    )
+    .min(1),
+});
+
+export const specTableContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  intro: z.string().optional(),
+  groups: z
+    .array(
+      z.object({
+        id: anchorId,
+        number: z.string().optional(),
+        title: z.string().min(1),
+        description: z.string().optional(),
+        columns: z
+          .object({ term: z.string().min(1), detail: z.string().min(1), note: z.string().optional() })
+          .optional(),
+        rows: z
+          .array(z.object({ term: z.string().min(1), detail: z.string().min(1), note: z.string().optional() }))
+          .min(1),
+      }),
+    )
+    .min(1),
+  footNote: z.string().optional(),
+});
+
+export const stageDossierContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  intro: z.string().optional(),
+  stages: z
+    .array(
+      z.object({
+        number: z.string().min(1),
+        title: z.string().min(1),
+        duration: z.string().optional(),
+        body: z.string().min(1),
+        inputsTitle: z.string().optional(),
+        inputs: z.array(z.string().min(1)).optional(),
+        outputsTitle: z.string().optional(),
+        outputs: z.array(z.string().min(1)).optional(),
+      }),
+    )
+    .min(1),
+  closingNote: z.string().optional(),
+});
+
+export const narrativeFeatureContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  standfirst: z.string().optional(),
+  blocks: z
+    .array(
+      z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("paragraph"), text: z.string().min(1) }),
+        z.object({ kind: z.literal("subheading"), text: z.string().min(1) }),
+        z.object({ kind: z.literal("pullquote"), text: z.string().min(1), attribution: z.string().optional() }),
+      ]),
+    )
+    .min(1),
+});
+
+export const glossaryContentSchema = z.object({
+  eyebrow: z.string().optional(),
+  headline: z.string().min(1),
+  intro: z.string().optional(),
+  entries: z
+    .array(
+      z.object({
+        term: z.string().min(1),
+        definition: z.string().min(1),
+        aka: z.array(z.string().min(1)).optional(),
+      }),
+    )
+    .min(1),
+});
+
 /** Maps each PageSectionType to its Zod schema — used to validate `content` server-side before persisting. */
 export const sectionContentSchemas = {
   hero: heroContentSchema,
@@ -201,6 +344,15 @@ export const sectionContentSchemas = {
   image: imageContentSchema,
   image_text: imageTextContentSchema,
   faq: faqContentSchema,
+  supply_equation: supplyEquationContentSchema,
+  heavy_vehicle_focus: heavyVehicleFocusContentSchema,
+  requirement_composer: requirementComposerContentSchema,
+  page_masthead: pageMastheadContentSchema,
+  editorial_dossier: editorialDossierContentSchema,
+  spec_table: specTableContentSchema,
+  stage_dossier: stageDossierContentSchema,
+  narrative_feature: narrativeFeatureContentSchema,
+  glossary: glossaryContentSchema,
 } as const;
 
 export type SectionType = keyof typeof sectionContentSchemas;

@@ -73,7 +73,7 @@ export class PagesService {
     if (!page || page.status !== "PUBLISHED" || !page.publishedSnapshot) {
       throw new NotFoundException("Page not found");
     }
-    return { id: page.id, slug: page.slug, publishedAt: page.publishedAt, ...(page.publishedSnapshot as object) };
+    return { ...(page.publishedSnapshot as unknown as PageSnapshot), id: page.id, publishedAt: page.publishedAt };
   }
 
   async create(input: CreatePageInput) {

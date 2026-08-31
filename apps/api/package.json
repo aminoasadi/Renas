@@ -7,7 +7,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
+    "lint": "pnpm exec eslint \"src/**/*.ts\" --max-warnings=0",
     "test": "jest",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist"

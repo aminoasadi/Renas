@@ -3,7 +3,7 @@ import type { PrinciplesContent } from "@renas/shared";
 export function PrinciplesSection({ content }: { content: unknown }) {
   const c = content as PrinciplesContent;
   return (
-    <section className="m-principle section--cream" data-theme-bg="cream">
+    <section className="m-principle section--cream" id="about" aria-label="The RENAS principle" data-theme-bg="cream">
       <div className="container">
         {c.eyebrow && <p className="eyebrow">{c.eyebrow}</p>}
         <h2 className="m-principle__headline headline">{c.headline}</h2>

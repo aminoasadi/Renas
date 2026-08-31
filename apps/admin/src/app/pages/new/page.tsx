@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { RequireAuth } from "@/lib/AuthContext";
 import { AdminShell } from "@/components/AdminShell";
 import { api, ApiError } from "@/lib/api-client";
@@ -16,10 +17,15 @@ function slugify(input: string): string {
     .replace(/-+/g, "-");
 }
 
-export default function NewPagePage() {
+function NewPageForm() {
+  const searchParams = useSearchParams();
+  const initialLocale = searchParams.get("locale") === "fa" ? "fa" : "en";
+  const initialSlug = searchParams.get("slug") ?? "";
+
   const [title, setTitle] = useState("");
-  const [slug, setSlug] = useState("");
-  const [slugTouched, setSlugTouched] = useState(false);
+  const [slug, setSlug] = useState(initialSlug);
+  const [slugTouched, setSlugTouched] = useState(initialSlug !== "");
+  const [locale, setLocale] = useState<"en" | "fa">(initialLocale);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const router = useRouter();
@@ -29,7 +35,7 @@ export default function NewPagePage() {
     setSaving(true);
     setError("");
     try {
-      const page = await api<AdminPage>("/pages", { method: "POST", body: { title, slug: slug || slugify(title), locale: "en" } });
+      const page = await api<AdminPage>("/pages", { method: "POST", body: { title, slug: slug || slugify(title), locale } });
       router.push(`/pages/${page.id}`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create page.");
@@ -41,12 +47,19 @@ export default function NewPagePage() {
     <RequireAuth>
       <AdminShell>
         <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <a href="/pages">Pages</a> / New Page
+          <Link href="/pages">Pages</Link> / New Page
         </div>
         <h1 style={{ marginBottom: 24 }}>New Page</h1>
 
         <form onSubmit={handleSubmit} className="admin-card" style={{ maxWidth: 480 }}>
           {error && <div className="admin-error-text" style={{ marginBottom: 16 }}>{error}</div>}
+          <div className="admin-field">
+            <label className="admin-label">Locale</label>
+            <select className="admin-select" value={locale} onChange={(e) => setLocale(e.target.value as "en" | "fa")}>
+              <option value="en">English</option>
+              <option value="fa">فارسی (Persian)</option>
+            </select>
+          </div>
           <div className="admin-field">
             <label className="admin-label">Title</label>
             <input
@@ -71,7 +84,7 @@ export default function NewPagePage() {
               }}
               required
             />
-            <p className="admin-hint">/{slug === "home" ? "" : slug}</p>
+            <p className="admin-hint">/{locale}/{slug === "home" ? "" : slug}</p>
           </div>
           <button type="submit" className="admin-btn admin-btn--primary" disabled={saving}>
             {saving ? "Creating…" : "Create Page"}
@@ -79,5 +92,13 @@ export default function NewPagePage() {
         </form>
       </AdminShell>
     </RequireAuth>
+  );
+}
+
+export default function NewPagePage() {
+  return (
+    <Suspense fallback={null}>
+      <NewPageForm />
+    </Suspense>
   );
 }

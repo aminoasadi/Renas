@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { RequireAuth } from "@/lib/AuthContext";
 import { AdminShell } from "@/components/AdminShell";
 import { api } from "@/lib/api-client";
@@ -74,7 +75,7 @@ export default function SupplyRequestDetailPage() {
     <RequireAuth>
       <AdminShell>
         <div className="admin-breadcrumb" style={{ marginBottom: 8 }}>
-          <a href="/supply-requests">Supply Requests</a> / {request.contactName}
+          <Link href="/supply-requests">Supply Requests</Link> / {request.contactName}
         </div>
         <div className="admin-page-header">
           <h1>{request.productName}</h1>
