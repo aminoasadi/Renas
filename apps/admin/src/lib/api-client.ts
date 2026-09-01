@@ -1,5 +1,3 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
-
 export class ApiError extends Error {
   code: string;
   details?: unknown;
@@ -13,17 +11,18 @@ export class ApiError extends Error {
 }
 
 /**
- * Every admin request goes through here. `credentials: "include"` is what
- * makes the session cookie work even though the admin app is served from a
- * different subdomain than the API — see docs/architecture.md's note on
- * why the admin is a client-fetching app rather than doing session-aware
- * server-side rendering against a cross-origin API.
+ * Every admin request goes through here, hitting a relative /api/v1 path
+ * that next.config.mjs rewrites (server-side) to the real API. Keeping the
+ * browser's request same-origin — rather than a cross-origin fetch baked
+ * with a build-time API URL — sidesteps both CORS and cross-site cookie
+ * (SameSite) issues, and means the real API URL only needs to exist as a
+ * runtime env var, not a Docker build arg.
  */
 export async function api<T = unknown>(
   path: string,
   options: { method?: string; body?: unknown; isFormData?: boolean } = {},
 ): Promise<T> {
-  const res = await fetch(`${API_URL}/api/v1${path}`, {
+  const res = await fetch(`/api/v1${path}`, {
     method: options.method ?? "GET",
     credentials: "include",
     headers: options.isFormData ? undefined : { "Content-Type": "application/json" },
@@ -41,5 +40,3 @@ export async function api<T = unknown>(
 
   return body?.data as T;
 }
-
-export { API_URL };

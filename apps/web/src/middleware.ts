@@ -8,6 +8,20 @@ function hasLocalePrefix(pathname: string) {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Proxies the browser's same-origin form-submission calls to the real
+  // API, resolving API_URL fresh on every request (plain server env var,
+  // read at runtime) rather than baking a destination into
+  // next.config.mjs's rewrites(), which next build freezes into
+  // routes-manifest.json at build time — see client-config.ts for why
+  // same-origin matters in the first place.
+  if (pathname.startsWith("/api/v1/public/")) {
+    const apiUrl = process.env.API_URL;
+    if (!apiUrl) {
+      return new NextResponse("API_URL is not configured", { status: 500 });
+    }
+    return NextResponse.rewrite(new URL(pathname + request.nextUrl.search, apiUrl));
+  }
+
   // Next.js internals, API routes and static files are never locale-prefixed.
   if (
     pathname.startsWith("/api/") ||

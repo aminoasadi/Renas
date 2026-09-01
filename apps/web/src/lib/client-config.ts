@@ -7,6 +7,5 @@
  * server-only config and would have thrown on first render in production.
  */
 export const clientConfig = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002",
   turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "",
 };

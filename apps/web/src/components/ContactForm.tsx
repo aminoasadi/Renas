@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { clientConfig as config } from "@/lib/client-config";
 import { trackEvent } from "@/lib/analytics";
 import type { Locale } from "@/lib/i18n";
 
@@ -56,7 +55,7 @@ export function ContactForm({ locale = "en" as Locale }: { locale?: Locale }) {
     setErrorMessage("");
 
     try {
-      const res = await fetch(`${config.apiUrl}/api/v1/public/contact-submissions`, {
+      const res = await fetch(`/api/v1/public/contact-submissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...values, honeypot: "" }),

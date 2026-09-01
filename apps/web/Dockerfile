@@ -20,16 +20,15 @@ COPY --from=deps /repo/packages /repo/packages
 COPY --from=deps /repo/apps/web/node_modules /repo/apps/web/node_modules
 COPY . .
 RUN pnpm --filter @renas/shared --filter @renas/validation build
-ARG API_URL
-ARG WEB_URL
-ARG PREVIEW_SECRET
-ARG REVALIDATE_SECRET
-ARG NEXT_PUBLIC_API_URL
+# No build args needed: API_URL/WEB_URL/PREVIEW_SECRET/REVALIDATE_SECRET are
+# read from process.env at request time by server-only code (config.ts falls
+# back to a placeholder during `next build` itself — see its comment), and
+# NEXT_PUBLIC_GA_ID/NEXT_PUBLIC_CLARITY_ID/NEXT_PUBLIC_TURNSTILE_SITE_KEY are
+# optional analytics/anti-spam keys that degrade gracefully when unset.
 ARG NEXT_PUBLIC_GA_ID
 ARG NEXT_PUBLIC_CLARITY_ID
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
-ENV API_URL=$API_URL WEB_URL=$WEB_URL PREVIEW_SECRET=$PREVIEW_SECRET REVALIDATE_SECRET=$REVALIDATE_SECRET \
-    NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID \
+ENV NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID \
     NEXT_PUBLIC_CLARITY_ID=$NEXT_PUBLIC_CLARITY_ID NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 RUN pnpm --filter @renas/web build
 

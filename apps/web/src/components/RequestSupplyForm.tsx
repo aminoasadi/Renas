@@ -185,7 +185,7 @@ export function RequestSupplyForm({ locale = "en", eyebrow, headline, body }: Re
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${config.apiUrl}/api/v1/public/supply-requests/attachment`, {
+      const res = await fetch(`/api/v1/public/supply-requests/attachment`, {
         method: "POST",
         body: formData,
       });
@@ -212,7 +212,7 @@ export function RequestSupplyForm({ locale = "en", eyebrow, headline, body }: Re
       : values.message;
 
     try {
-      const res = await fetch(`${config.apiUrl}/api/v1/public/supply-requests`, {
+      const res = await fetch(`/api/v1/public/supply-requests`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

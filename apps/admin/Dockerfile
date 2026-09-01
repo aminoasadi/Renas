@@ -20,8 +20,6 @@ COPY --from=deps /repo/packages /repo/packages
 COPY --from=deps /repo/apps/admin/node_modules /repo/apps/admin/node_modules
 COPY . .
 RUN pnpm --filter @renas/shared --filter @renas/validation build
-ARG API_URL
-ENV NEXT_PUBLIC_API_URL=$API_URL
 RUN pnpm --filter @renas/admin build
 
 FROM node:20-alpine AS runtime

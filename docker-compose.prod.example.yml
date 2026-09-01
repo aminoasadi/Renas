@@ -47,11 +47,11 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        API_URL: ${API_URL}
-        WEB_URL: ${WEB_URL}
-        PREVIEW_SECRET: ${PREVIEW_SECRET}
-        REVALIDATE_SECRET: ${REVALIDATE_SECRET}
-        NEXT_PUBLIC_API_URL: ${API_URL}
+        # Only the optional client-side analytics/anti-spam keys are baked
+        # in at build time — API_URL/WEB_URL/PREVIEW_SECRET/REVALIDATE_SECRET
+        # and the /api/v1 proxy in src/middleware.ts are read from
+        # env_file/.env.production at runtime instead, so redeploying with a
+        # new API_URL never requires a rebuild.
         NEXT_PUBLIC_GA_ID: ${NEXT_PUBLIC_GA_ID:-}
         NEXT_PUBLIC_CLARITY_ID: ${NEXT_PUBLIC_CLARITY_ID:-}
         NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
@@ -64,8 +64,6 @@ services:
     build:
       context: .
       dockerfile: apps/admin/Dockerfile
-      args:
-        API_URL: ${API_URL}
     restart: unless-stopped
     env_file: .env.production
     depends_on: [api]
