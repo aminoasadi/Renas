@@ -1,7 +1,15 @@
+// `next build` evaluates every route module (robots.txt, sitemap.xml, page
+// metadata) to collect static page data, which imports this file even for
+// routes that don't run at request time until the container is actually
+// deployed with real env vars. Docker/CI builds often don't have secrets
+// wired up as build args, so fail hard only outside the build phase —
+// during the build itself, fall back to a placeholder so `next build` can
+// finish; the real values still need to be set on the running container.
 function required(name: string): string {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
+  if (value) return value;
+  if (process.env.NEXT_PHASE === "phase-production-build") return `__missing_${name}__`;
+  throw new Error(`Missing required environment variable: ${name}`);
 }
 
 export const config = {

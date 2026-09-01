@@ -43,7 +43,6 @@ export function HeroSection({ content }: { content: unknown }) {
           </div>
         </div>
 
-        <div className="m-hero__gold-line" aria-hidden="true" />
         <div className="m-hero__cursor-meta" id="heroCursorMeta" aria-hidden="true" />
       </div>
     </section>

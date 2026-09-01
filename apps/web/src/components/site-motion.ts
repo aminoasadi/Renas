@@ -101,18 +101,8 @@ export function initSiteMotion(signal: AbortSignal): void {
     }
 
     /* ---------------- 01 Kinetic Hero ---------------- */
-    const hero = document.querySelector<HTMLElement>(".m-hero");
-    const heroLines = gsap.utils.toArray<HTMLElement>(".m-hero__line");
-    const goldLine = document.querySelector<HTMLElement>(".m-hero__gold-line");
     const heroCursorMeta = document.getElementById("heroCursorMeta");
     const heroImgs = gsap.utils.toArray<HTMLElement>(".m-hero__img");
-
-    if (hero) {
-      gsap.timeline({
-        scrollTrigger: { trigger: hero, start: "top top", end: "+=65%", scrub: true },
-      }).to(heroLines, { opacity: 1, x: 0, stagger: 0.12, ease: "none" })
-        .to(goldLine, { width: "100%", ease: "none" }, 0);
-    }
 
     if (heroCursorMeta && heroImgs.length && !isTouch) {
       heroImgs.forEach((fig) => {

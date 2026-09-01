@@ -13,18 +13,21 @@ export function SupplySystemSection({ content }: { content: unknown }) {
     >
       <div className="m-system__sticky">
         {c.eyebrow && <p className="eyebrow">{c.eyebrow}</p>}
-        <h2 className="m-system__fixed headline">{c.headline}</h2>
 
-        {/* The reel is decorative — the real, always-legible copy is the
-            sr-only sentence below, so screen readers get the full list
-            rather than whatever word happens to be centered. */}
-        <div className="m-system__reel-viewport" aria-hidden="true">
-          <div className="m-system__reel" id="systemReel">
-            {words.map((w, i) => (
-              <div key={c.nodes[i].key} className="m-system__reel-item">
-                {w}.
-              </div>
-            ))}
+        <div className="m-system__row">
+          <h2 className="m-system__fixed headline">{c.headline}</h2>
+
+          {/* The reel is decorative — the real, always-legible copy is the
+              sr-only sentence below, so screen readers get the full list
+              rather than whatever word happens to be centered. */}
+          <div className="m-system__reel-viewport" aria-hidden="true">
+            <div className="m-system__reel" id="systemReel">
+              {words.map((w, i) => (
+                <div key={c.nodes[i].key} className="m-system__reel-item">
+                  {w}.
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

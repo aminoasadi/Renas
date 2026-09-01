@@ -42,7 +42,7 @@
 
 .m-wordmark {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 9px;
   font-family: var(--font-mono);
   font-size: 18px;
@@ -223,9 +223,7 @@
 }
 .m-hero__line {
   display: block;
-  opacity: 0.25;
-  transform: translateX(24px);
-  transition: opacity 0.5s var(--ease-standard), transform 0.5s var(--ease-standard);
+  opacity: 1;
 }
 .m-hero__line.is-aligned { opacity: 1; transform: translateX(0); }
 .m-hero__line--accent { color: var(--gold); }
@@ -246,16 +244,6 @@
 }
 
 .m-hero__cta { display: flex; gap: var(--sp-5); flex-wrap: wrap; }
-
-.m-hero__gold-line {
-  position: absolute;
-  left: 0; top: 62%;
-  width: 0%;
-  height: 1px;
-  background: var(--gold);
-  z-index: 3;
-  transition: width 0.2s linear;
-}
 
 .m-hero__cursor-meta {
   position: fixed;
@@ -386,16 +374,25 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  text-align: center;
+  text-align: left;
   padding-inline: var(--page-margin);
   overflow: hidden;
 }
 
+/* Fixed headline + scrolling reel sit inline, left-aligned, on the same
+   line — the reel reads as the sentence's changing last word rather than
+   a separate centered block underneath. */
+.m-system__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.3em;
+}
+
 .m-system__fixed {
-  max-width: 20ch;
-  font-size: var(--fs-hero);
+  font-size: var(--fs-display);
   line-height: var(--lh-tight);
   margin-top: var(--sp-5);
 }
@@ -405,19 +402,21 @@
    each line's opacity are driven every scroll tick in site-motion.ts —
    continuous, not a stepped swap — so the centered line reads bright
    and gold while the lines just above/below it are still legible but
-   dimmed, exactly like scrolling text passing a fixed center point. */
+   dimmed, exactly like scrolling text passing a fixed center point.
+   Sized off --fs-display, matching .m-system__fixed, so the reel reads
+   as part of the same sentence instead of a separate display-scale block. */
 .m-system__reel-viewport {
-  height: calc(var(--fs-hero) * var(--lh-tight) * 3);
+  height: calc(var(--fs-display) * var(--lh-tight) * 3);
   overflow: hidden;
-  margin-top: var(--sp-2);
+  margin-top: var(--sp-5);
 }
 .m-system__reel { will-change: transform; }
 .m-system__reel-item {
-  height: calc(var(--fs-hero) * var(--lh-tight));
+  height: calc(var(--fs-display) * var(--lh-tight));
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: var(--fs-hero);
+  justify-content: flex-start;
+  font-size: var(--fs-display);
   line-height: var(--lh-tight);
   font-weight: 400;
   color: var(--ink-on-charcoal-soft);
@@ -442,8 +441,9 @@
      more readability than the effect is worth. */
   .m-system { height: auto; }
   .m-system__sticky { position: static; height: auto; padding-block: var(--sp-9); }
+  .m-system__row { flex-direction: column; align-items: flex-start; }
   .m-system__fixed { font-size: clamp(32px, 9vw, 48px); max-width: none; }
-  .m-system__reel-viewport { height: auto; overflow: visible; }
+  .m-system__reel-viewport { height: auto; overflow: visible; margin-top: var(--sp-3); }
   .m-system__reel {
     transform: none !important;
     display: flex;

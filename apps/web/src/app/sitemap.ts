@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { getSitemapEntries } from "@/lib/api";
 import { config } from "@/lib/config";
 
+// Requires a live API call and the real WEB_URL — both only guaranteed once
+// the container is actually running, not during the Docker build.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { pages, posts } = await getSitemapEntries();
 

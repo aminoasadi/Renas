@@ -10,9 +10,12 @@ import { Analytics } from "@/components/Analytics";
 import { getSettings } from "@/lib/api";
 import { isLocale, dirFor, type Locale } from "@/lib/i18n";
 
-export async function generateStaticParams() {
-  return [{ locale: "en" }, { locale: "fa" }];
-}
+// CMS content can change at any time via the admin panel, and the Docker
+// build environment has no guaranteed access to a live API — so every page
+// under this layout renders per-request against the running container's
+// real env vars, rather than being prerendered (and requiring API access)
+// at build time.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
