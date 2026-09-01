@@ -63,16 +63,14 @@ model User {
   name         String
   role         Role
   status       UserStatus @default(ACTIVE)
-  // Optional password login, alongside the default OTP flow — set only for
-  // accounts that opt into it (see AuthService.loginWithPassword).
-  username     String?    @unique
-  passwordHash String?
+  // Username/password is the only login mechanism (see AuthController.login).
+  username     String     @unique
+  passwordHash String
   lastLoginAt  DateTime?  @db.Timestamptz
   createdAt    DateTime   @default(now()) @db.Timestamptz
   updatedAt    DateTime   @updatedAt @db.Timestamptz
 
   sessions        Session[]
-  otpCodes        OtpCode[]
   auditLogs       AuditLog[]
   uploadedMedia   MediaAsset[]
   supplyNotes     SupplyRequestNote[]
@@ -93,21 +91,6 @@ model Session {
   createdAt DateTime  @default(now()) @db.Timestamptz
 
   @@index([userId])
-  @@index([expiresAt])
-}
-
-model OtpCode {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @db.Uuid
-  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  codeHash   String
-  attempts   Int       @default(0)
-  expiresAt  DateTime  @db.Timestamptz
-  consumedAt DateTime? @db.Timestamptz
-  ipAddress  String?
-  createdAt  DateTime  @default(now()) @db.Timestamptz
-
-  @@index([userId, consumedAt])
   @@index([expiresAt])
 }
 

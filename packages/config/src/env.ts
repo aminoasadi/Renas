@@ -32,19 +32,6 @@ export const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().default("renas_session"),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(12),
 
-  OTP_TTL_MINUTES: z.coerce.number().int().positive().default(5),
-  OTP_LENGTH: z.coerce.number().int().min(4).max(10).default(6),
-  OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
-  OTP_REQUEST_RATE_LIMIT_PER_HOUR: z.coerce.number().int().positive().default(5),
-
-  SMTP_HOST: z.string().min(1),
-  SMTP_PORT: z.coerce.number().int().positive(),
-  SMTP_SECURE: booleanFromEnv(false),
-  SMTP_USER: z.string().optional().default(""),
-  SMTP_PASSWORD: z.string().optional().default(""),
-  SMTP_FROM: z.string().min(1),
-  NOTIFICATIONS_TEAM_EMAIL: z.string().email(),
-
   S3_ENDPOINT: z.string().url(),
   S3_REGION: z.string().min(1),
   S3_BUCKET: z.string().min(1),

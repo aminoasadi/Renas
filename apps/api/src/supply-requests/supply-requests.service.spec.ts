@@ -1,8 +1,7 @@
 import { SupplyRequestsService } from "./supply-requests.service";
-import { testPrisma, makeTestConfig, makeThrowingEmailService } from "../../test/test-helpers";
+import { testPrisma } from "../../test/test-helpers";
 
-describe("SupplyRequestsService (real Postgres — persist-before-notify)", () => {
-  const config = makeTestConfig();
+describe("SupplyRequestsService (real Postgres)", () => {
   const createdIds: string[] = [];
 
   afterEach(async () => {
@@ -12,8 +11,8 @@ describe("SupplyRequestsService (real Postgres — persist-before-notify)", () =
     }
   });
 
-  it("persists the request even when the email provider fails entirely", async () => {
-    const service = new SupplyRequestsService(testPrisma as never, makeThrowingEmailService(), config);
+  it("persists the request", async () => {
+    const service = new SupplyRequestsService(testPrisma as never);
 
     const result = await service.submit({
       productName: "Brake Disc — Test",
@@ -31,7 +30,7 @@ describe("SupplyRequestsService (real Postgres — persist-before-notify)", () =
   });
 
   it("a honeypot-triggered submission is accepted-looking but never persisted", async () => {
-    const service = new SupplyRequestsService(testPrisma as never, makeThrowingEmailService(), config);
+    const service = new SupplyRequestsService(testPrisma as never);
 
     const countBefore = await testPrisma.supplyRequest.count();
     const result = await service.submit({
@@ -46,7 +45,7 @@ describe("SupplyRequestsService (real Postgres — persist-before-notify)", () =
   });
 
   it("status can be updated and defaults to NEW", async () => {
-    const service = new SupplyRequestsService(testPrisma as never, makeThrowingEmailService(), config);
+    const service = new SupplyRequestsService(testPrisma as never);
     const result = await service.submit({
       productName: "Filter — Test",
       contactName: "John Test",

@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import * as argon2 from "argon2";
 import type { CreateUserInput, UpdateUserInput } from "@renas/validation";
 import { PrismaService } from "../prisma/prisma.service";
 
@@ -11,12 +12,18 @@ export class UsersService {
   }
 
   async create(input: CreateUserInput) {
-    return this.prisma.user.create({ data: input });
+    const { password, ...rest } = input;
+    return this.prisma.user.create({ data: { ...rest, passwordHash: await argon2.hash(password) } });
   }
 
   async update(id: string, input: UpdateUserInput) {
     await this.ensureExists(id);
     return this.prisma.user.update({ where: { id }, data: input });
+  }
+
+  async resetPassword(id: string, password: string) {
+    await this.ensureExists(id);
+    return this.prisma.user.update({ where: { id }, data: { passwordHash: await argon2.hash(password) } });
   }
 
   async setStatus(id: string, status: "ACTIVE" | "DISABLED") {

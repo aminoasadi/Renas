@@ -6,7 +6,6 @@ import { ScheduleModule } from "@nestjs/schedule";
 
 import { ConfigModule } from "./config/config.module";
 import { PrismaModule } from "./prisma/prisma.module";
-import { EmailModule } from "./email/email.module";
 import { AuditModule } from "./audit/audit.module";
 import { ContentModule } from "./content/content.module";
 
@@ -45,7 +44,6 @@ import { HealthController } from "./health/health.controller";
     }),
     ScheduleModule.forRoot(),
     PrismaModule,
-    EmailModule,
     AuditModule,
     ContentModule,
     AuthModule,

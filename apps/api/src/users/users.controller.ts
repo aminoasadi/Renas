@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
-import { createUserSchema, updateUserSchema } from "@renas/validation";
+import { createUserSchema, updateUserSchema, resetPasswordSchema } from "@renas/validation";
 import { AuditAction } from "@renas/shared";
 import type { User } from "@renas/database";
 import { UsersService } from "./users.service";
@@ -74,6 +74,21 @@ export class UsersController {
     await this.audit.record({
       userId: actor.id,
       action: AuditAction.ENABLE_USER,
+      entityType: "User",
+      entityId: id,
+      ipAddress: req.ip,
+    });
+    return user;
+  }
+
+  @Patch(":id/reset-password")
+  async resetPassword(@Param("id") id: string, @Body() body: unknown, @CurrentUser() actor: User, @Req() req: Request) {
+    const input = resetPasswordSchema.parse(body);
+    const user = await this.users.resetPassword(id, input.password);
+    await this.sessionService.revokeAllSessionsForUser(id);
+    await this.audit.record({
+      userId: actor.id,
+      action: AuditAction.RESET_PASSWORD,
       entityType: "User",
       entityId: id,
       ipAddress: req.ip,

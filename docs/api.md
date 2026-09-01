@@ -8,7 +8,7 @@ All routes are versioned under `/api/v1`. Every response is either `{ "data": ..
 
 | Module | Base path | Auth |
 |---|---|---|
-| Auth | `/auth` | OTP request/verify are public; `/auth/me`, `/auth/logout` require a session |
+| Auth | `/auth` | `/auth/login` is public; `/auth/me`, `/auth/logout` require a session |
 | Users | `/users` | SUPER_ADMIN |
 | Pages | `/pages` | SUPER_ADMIN, EDITOR |
 | Blog | `/blog`, `/categories`, `/tags`, `/authors` | SUPER_ADMIN, EDITOR |

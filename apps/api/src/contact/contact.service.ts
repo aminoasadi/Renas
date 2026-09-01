@@ -1,19 +1,12 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { ContactSubmissionInput } from "@renas/validation";
 import { PrismaService } from "../prisma/prisma.service";
-import { EmailService } from "../email/email.service";
-import { AppConfig } from "../config/config.service";
-import { contactNotificationTemplate } from "../email/templates";
 
 @Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly email: EmailService,
-    private readonly config: AppConfig,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async submit(input: ContactSubmissionInput) {
     if (input.honeypot) {
@@ -31,11 +24,6 @@ export class ContactService {
         message: input.message,
       },
     });
-
-    const template = contactNotificationTemplate(record);
-    await this.email
-      .send({ to: this.config.notificationsTeamEmail, subject: template.subject, html: template.html })
-      .catch((error) => this.logger.error(`Failed to send contact notification for ${record.id}: ${error.message}`));
 
     return { id: record.id, accepted: true };
   }

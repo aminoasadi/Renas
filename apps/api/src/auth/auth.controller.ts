@@ -12,9 +12,8 @@ import {
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import * as argon2 from "argon2";
-import { requestOtpSchema, verifyOtpSchema, passwordLoginSchema } from "@renas/validation";
+import { passwordLoginSchema } from "@renas/validation";
 import { AuditAction } from "@renas/shared";
-import { OtpService } from "./otp.service";
 import { SessionService } from "./session.service";
 import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -25,47 +24,14 @@ import type { User } from "@renas/database";
 @Controller("auth")
 export class AuthController {
   constructor(
-    private readonly otp: OtpService,
     private readonly sessions: SessionService,
     private readonly audit: AuditService,
     private readonly prisma: PrismaService,
   ) {}
 
-  @Post("otp/request")
-  @HttpCode(200)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async requestOtp(@Body() body: unknown, @Req() req: Request) {
-    const input = requestOtpSchema.parse(body);
-    await this.otp.requestOtp(input.email, req.ip);
-    // Always the same generic response — see OtpService for why.
-    return { message: "If that email is authorized, a login code has been sent." };
-  }
-
-  @Post("otp/verify")
-  @HttpCode(200)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  async verifyOtp(@Body() body: unknown, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const input = verifyOtpSchema.parse(body);
-    const result = await this.otp.verifyOtp(input.email, input.code, req.ip);
-
-    if (result.outcome !== "success") {
-      const messages: Record<string, string> = {
-        invalid: "Invalid or expired code",
-        expired: "This code has expired, request a new one",
-        too_many_attempts: "Too many attempts, request a new code",
-      };
-      throw new UnauthorizedException(messages[result.outcome]);
-    }
-
-    return this.establishSession(result.userId, req, res);
-  }
-
   /**
-   * Password login for accounts that opt into it via `username`/`passwordHash`
-   * (set outside the normal OTP flow — see the seed script). Kept separate
-   * from OTP rather than replacing it, since OTP remains the default for
-   * every other account. Heavily throttled: unlike a one-time code, a
-   * password is a fixed, guessable secret.
+   * Username/password is the only CMS login mechanism. Heavily throttled:
+   * unlike a one-time code, a password is a fixed, guessable secret.
    */
   @Post("login")
   @HttpCode(200)

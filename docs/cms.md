@@ -2,12 +2,12 @@
 
 ## Logging in
 
-There is no password and no self-registration. A SUPER_ADMIN creates every account (`Users` in the admin, or the seed script for the first account). To log in:
+There is no self-registration. A SUPER_ADMIN creates every account (`Users` in the admin, or the seed script for the first account) with a username and password. To log in:
 
-1. Enter your email at `admin.renasxgroup.com/login`.
-2. The API sends a 6-digit code to that email (via Mailpit at `http://localhost:8025` in local development).
-3. Enter the code within 5 minutes. A wrong code, an expired code, and too many attempts are each shown as their own distinct state — see `apps/admin`'s login flow.
-4. On success, a secure session cookie is set and you land on the dashboard.
+1. Enter your username and password at `admin.renasxgroup.com/login`.
+2. On success, a secure session cookie is set and you land on the dashboard.
+
+A SUPER_ADMIN can reset any user's password from the `Users` page — this also revokes that user's active sessions. There is no email-based account recovery.
 
 ## Editing and publishing a page
 

@@ -18,7 +18,7 @@ async function bootstrap() {
 
   if (config.appEnv === "production") {
     // Behind nginx, req.ip otherwise reports the proxy's address for every
-    // request — which would make OTP/RFQ rate limiting and audit log IPs
+    // request — which would make RFQ rate limiting and audit log IPs
     // meaningless (everyone looks like the same client).
     app.set("trust proxy", 1);
   }

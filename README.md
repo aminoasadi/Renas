@@ -1,6 +1,6 @@
 # RENAS Platform
 
-A production monorepo for RENAS Group: a public Next.js website, a custom Next.js CMS admin, and a NestJS API backed by PostgreSQL — with real draft/preview/publish workflow, a blog, RFQ and contact intake, media management on S3-compatible storage, and OTP-based CMS authentication.
+A production monorepo for RENAS Group: a public Next.js website, a custom Next.js CMS admin, and a NestJS API backed by PostgreSQL — with real draft/preview/publish workflow, a blog, RFQ and contact intake, media management on S3-compatible storage, and username/password CMS authentication.
 
 See `docs/architecture.md` for the system diagram and design rationale, and `docs/cms.md` for how to actually use the CMS.
 
@@ -16,20 +16,19 @@ See `docs/architecture.md` for the system diagram and design rationale, and `doc
 
 ## Local development
 
-Requires Node 20+, pnpm 10+, and Docker.
+Requires Node 20+ and pnpm 10+. Database and object storage are external managed services (Hamrah) — no local Docker infra is needed for them.
 
 ```bash
 git clone <this repo>
 cd renas-platform
-cp .env.example .env          # fill in real values only if deviating from the defaults below — they work as-is for local dev
+cp .env.example .env          # fill in DATABASE_URL, S3_*, and ADMIN_USERNAME/ADMIN_PASSWORD with real values
 pnpm install
-docker compose up -d          # Postgres (port 5434), MinIO (9000/9001), Mailpit (1025/8025)
 pnpm db:migrate                # applies migrations, prompts for a name on first schema change
 pnpm db:seed                   # creates a SUPER_ADMIN, site settings, nav, and a Home page
 pnpm dev                       # runs web (3000), admin (3001), api (3002) together
 ```
 
-Open `http://localhost:3000` (public site), `http://localhost:3001` (CMS admin), `http://localhost:3002/api/docs` (Swagger). OTP codes sent during local login land in Mailpit at `http://localhost:8025` — no real email provider needed for development.
+Open `http://localhost:3000` (public site), `http://localhost:3001` (CMS admin), `http://localhost:3002/api/docs` (Swagger). Log into the CMS admin with `ADMIN_USERNAME`/`ADMIN_PASSWORD` — there is no email step.
 
 ### Local ports
 
@@ -38,9 +37,7 @@ Open `http://localhost:3000` (public site), `http://localhost:3001` (CMS admin),
 | Web | 3000 |
 | Admin | 3001 |
 | API | 3002 |
-| Postgres | 5434 (not 5432 — see `docker-compose.yml`'s comment if you need to change this) |
-| MinIO API / Console | 9000 / 9001 |
-| Mailpit SMTP / Web UI | 1025 / 8025 |
+| Postgres | Hamrah managed instance (see `DATABASE_URL` in `.env`) |
 
 ## Environment variables
 

@@ -12,15 +12,14 @@
                          ┌──────────────────────┐        ┌──────────────────┐
    CMS Admin ───────────▶│  apps/api (NestJS)   │───────▶│   PostgreSQL     │
    admin.renasxgroup.com │  api.renasxgroup.com │        │   (Prisma)       │
-                         └──────┬───────┬───────┘        └──────────────────┘
-                                │       │
-                    ┌───────────┘       └───────────┐
-                    ▼                                ▼
-          ┌──────────────────┐              ┌──────────────────┐
-          │ S3-compatible     │              │  SMTP            │
-          │ object storage    │              │  (OTP / RFQ /    │
-          │ (MinIO locally)   │              │   contact email) │
-          └──────────────────┘              └──────────────────┘
+                         └──────────┬───────────┘        └──────────────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────┐
+                         │ S3-compatible     │
+                         │ object storage    │
+                         │ (Hamrah)          │
+                         └──────────────────┘
 ```
 
 ## Publish flow (the platform's most important behavior)

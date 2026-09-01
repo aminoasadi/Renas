@@ -7,11 +7,13 @@ const WEB_URL = process.env.WEB_URL ?? "http://localhost:3000";
 
 async function main() {
   const seedAdminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@renasxgroup.com";
-  // Optional password login for the seeded admin, alongside the default OTP
-  // flow — set ADMIN_USERNAME/ADMIN_PASSWORD in .env to enable it locally.
+  // Username/password is the only login mechanism — both are required to seed the admin.
   const adminUsername = process.env.ADMIN_USERNAME;
   const adminPassword = process.env.ADMIN_PASSWORD;
-  const passwordHash = adminUsername && adminPassword ? await argon2.hash(adminPassword) : undefined;
+  if (!adminUsername || !adminPassword) {
+    throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD must both be set in .env to seed the SUPER_ADMIN account.");
+  }
+  const passwordHash = await argon2.hash(adminPassword);
 
   const admin = await prisma.user.upsert({
     where: { email: seedAdminEmail },
@@ -23,9 +25,9 @@ async function main() {
       username: adminUsername,
       passwordHash,
     },
-    update: adminUsername ? { username: adminUsername, passwordHash } : {},
+    update: { username: adminUsername, passwordHash },
   });
-  console.log(`Seeded SUPER_ADMIN: ${admin.email}${adminUsername ? ` (password login enabled for username "${adminUsername}")` : ""}`);
+  console.log(`Seeded SUPER_ADMIN: ${admin.email} (username "${adminUsername}")`);
 
   await prisma.siteSettings.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
@@ -1992,7 +1994,7 @@ async function main() {
   console.log("Seeded initial supply categories as blog categories");
 
   console.log("\nSeed complete.");
-  console.log(`Log in to the CMS with: ${seedAdminEmail} (OTP will be sent via Mailpit at http://localhost:8025)`);
+  console.log(`Log in to the CMS with username "${adminUsername}" and the configured ADMIN_PASSWORD.`);
 }
 
 main()

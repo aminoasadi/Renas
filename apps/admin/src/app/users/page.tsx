@@ -11,6 +11,8 @@ export default function UsersPage() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"EDITOR" | "SUPER_ADMIN">("EDITOR");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
   async function load() {
@@ -24,9 +26,11 @@ export default function UsersPage() {
     e.preventDefault();
     setError("");
     try {
-      await api("/users", { method: "POST", body: { email, name, role } });
+      await api("/users", { method: "POST", body: { email, name, role, username, password } });
       setEmail("");
       setName("");
+      setUsername("");
+      setPassword("");
       await load();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Failed to create user.");
@@ -40,12 +44,23 @@ export default function UsersPage() {
     await load();
   }
 
+  async function resetPassword(user: CurrentUser) {
+    const newPassword = prompt(`New password for ${user.email} (min 8 characters):`);
+    if (!newPassword) return;
+    try {
+      await api(`/users/${user.id}/reset-password`, { method: "PATCH", body: { password: newPassword } });
+      alert("Password reset. Their active sessions have been revoked.");
+    } catch (err) {
+      alert(err instanceof ApiError ? err.message : "Failed to reset password.");
+    }
+  }
+
   return (
     <RequireAuth role="SUPER_ADMIN">
       <AdminShell>
         <h1 style={{ marginBottom: 24 }}>Users</h1>
 
-        <form onSubmit={createUser} className="admin-card" style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr 140px auto", gap: 12, alignItems: "end" }}>
+        <form onSubmit={createUser} className="admin-card" style={{ marginBottom: 24, display: "grid", gridTemplateColumns: "1fr 1fr 140px 1fr 1fr auto", gap: 12, alignItems: "end" }}>
           <div className="admin-field" style={{ marginBottom: 0 }}>
             <label className="admin-label">Email</label>
             <input className="admin-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -61,6 +76,14 @@ export default function UsersPage() {
               <option value="SUPER_ADMIN">Super Admin</option>
             </select>
           </div>
+          <div className="admin-field" style={{ marginBottom: 0 }}>
+            <label className="admin-label">Username</label>
+            <input className="admin-input" value={username} onChange={(e) => setUsername(e.target.value)} required autoComplete="off" />
+          </div>
+          <div className="admin-field" style={{ marginBottom: 0 }}>
+            <label className="admin-label">Password</label>
+            <input className="admin-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete="new-password" />
+          </div>
           <button type="submit" className="admin-btn admin-btn--primary">Create User</button>
         </form>
         {error && <p className="admin-error-text" style={{ marginBottom: 16 }}>{error}</p>}
@@ -75,9 +98,12 @@ export default function UsersPage() {
                 <td>{u.role}</td>
                 <td><span className={`admin-badge ${u.status === "ACTIVE" ? "admin-badge--published" : "admin-badge--archived"}`}>{u.status}</span></td>
                 <td className="meta">{u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}</td>
-                <td>
+                <td style={{ display: "flex", gap: 8 }}>
                   <button className="admin-btn admin-btn--sm" onClick={() => toggleStatus(u)}>
                     {u.status === "ACTIVE" ? "Disable" : "Enable"}
+                  </button>
+                  <button className="admin-btn admin-btn--sm" onClick={() => resetPassword(u)}>
+                    Reset password
                   </button>
                 </td>
               </tr>

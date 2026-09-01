@@ -16,11 +16,11 @@ Copy `.env.example` to a production `.env` (or your platform's secret manager) a
 
 ## 3. PostgreSQL
 
-Either run the `postgres` service in `docker-compose.prod.example.yml`, or point `DATABASE_URL` at a managed instance (RDS, Cloud SQL, Neon, etc.) and remove that service. Either way, `DATABASE_URL` must be reachable from wherever `apps/api` runs.
+Either run the `postgres` service in `docker-compose.prod.example.yml`, or point `DATABASE_URL` at a managed instance (Hamrah, RDS, Cloud SQL, Neon, etc.) and remove that service. Either way, `DATABASE_URL` must be reachable from wherever `apps/api` runs. Production uses Hamrah's managed Postgres — see `DATABASE_URL` in `.env`.
 
 ## 4. S3-compatible object storage
 
-Provision a bucket on AWS S3, Cloudflare R2, ArvanCloud, or any S3-compatible provider. Set `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`, `S3_FORCE_PATH_STYLE` accordingly (`S3_FORCE_PATH_STYLE=true` for R2/ArvanCloud/MinIO-style endpoints, `false` for AWS S3 with virtual-hosted-style URLs). The bucket should allow public read on the objects the app uploads (or front it with a CDN) since `publicUrl` is served directly to visitors.
+Provision a bucket on Hamrah's object storage, AWS S3, Cloudflare R2, ArvanCloud, or any S3-compatible provider. Set `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`, `S3_FORCE_PATH_STYLE` accordingly (`S3_FORCE_PATH_STYLE=true` for Hamrah/R2/ArvanCloud-style endpoints, `false` for AWS S3 with virtual-hosted-style URLs). The bucket should allow public read on the objects the app uploads (or front it with a CDN) since `publicUrl` is served directly to visitors. Production uses Hamrah's S3-compatible storage — see `S3_*` in `.env`.
 
 ## 5. SMTP
 
